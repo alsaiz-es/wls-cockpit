@@ -42,6 +42,8 @@ import { invokeJmsJmxHelper, jmsJmxErrorResponse } from './jms-jmx.ts'
 import { CredentialGuard, credentialKey, defaultCredentialGuard } from './credential-guard.ts'
 import { TabPresence, parseTabPresenceMessage } from './tab-presence.ts'
 import { TAB_PRESENCE_PATH } from '../src/api/tab-presence-contract.ts'
+import { ALERT_RULES_PATH } from '../src/api/alert-rules.ts'
+import { AlertRulesStore } from './alert-rules-store.ts'
 import {
   CREDENTIALS_REJECTED_CODE,
   CREDENTIALS_REJECTED_HEADER,
@@ -93,6 +95,8 @@ export interface CockpitServerOptions {
   jmsJmxConfig?: JmsJmxConfig
   auditStore?: ActionAuditStoreOptions
   connectionProfileStore?: ConnectionProfileStoreOptions
+  // Tests pass their own; otherwise every request shares one store over ~/.wls-cockpit/alerts.yaml.
+  alertRulesStore?: AlertRulesStore
   distDir?: string
   // Set by the CLI so the browser can stop the local server; absent under the Vite dev server.
   onShutdownRequest?: () => void
@@ -304,6 +308,20 @@ export async function handleConnectionProfileCatalogRequest(req: IncomingMessage
 
   const profiles = await writeConnectionProfileCatalog((parsedBody as { profiles: unknown[] }).profiles, options.connectionProfileStore)
   sendJson(res, 200, { profiles })
+}
+
+const sharedAlertRulesStore = new AlertRulesStore()
+
+export async function handleAlertRulesRequest(req: IncomingMessage, res: ServerResponse, options: CockpitServerOptions) {
+  if (requestPath(req) !== ALERT_RULES_PATH) {
+    sendJson(res, 404, { error: 'Alert rules endpoint not found.' })
+    return
+  }
+  if (req.method !== 'GET') {
+    sendJson(res, 405, { error: 'Alert rules are read-only; edit the file instead.' })
+    return
+  }
+  sendJson(res, 200, await (options.alertRulesStore ?? sharedAlertRulesStore).read())
 }
 
 function resolveProxyTarget(req: IncomingMessage, defaultTarget?: string): NormalizedWlsTarget {
@@ -820,6 +838,10 @@ export function createCockpitServer(options: CockpitServerOptions): Server {
       }
       if (req.url?.startsWith('/api/audit')) {
         await handleActionAuditRequest(req, res, options)
+        return
+      }
+      if (requestPath(req) === ALERT_RULES_PATH) {
+        await handleAlertRulesRequest(req, res, options)
         return
       }
       if (req.url?.startsWith('/__wls-cockpit/connection-profiles')) {

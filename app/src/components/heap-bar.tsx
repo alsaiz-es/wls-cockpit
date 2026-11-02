@@ -1,6 +1,7 @@
 import type { MetricHistorySeries } from '@/api/queries/metric-history'
 import {
   heapSegments,
+  heapThresholdMarks,
   heapUtilizationLabel,
   type HeapTone,
   type HeapUsage,
@@ -77,8 +78,14 @@ function HeapMeter({ heap, size }: { heap: HeapUsage; size: 'compact' | 'detail'
       data-heap-meter
       aria-hidden
     >
-      <span className="absolute inset-y-0 left-[70%] z-10 w-px bg-foreground/45" data-heap-marker="70" />
-      <span className="absolute inset-y-0 left-[85%] z-10 w-px bg-foreground/55" data-heap-marker="85" />
+      {heapThresholdMarks().map((mark, index) => (
+        <span
+          key={mark}
+          className={cn('absolute inset-y-0 z-10 w-px', index === 0 ? 'bg-foreground/45' : 'bg-foreground/55')}
+          style={{ left: `${mark}%` }}
+          data-heap-marker={mark}
+        />
+      ))}
       <span
         className={cn('absolute inset-y-0 left-0', tone.fill)}
         style={{ width: `${segments.usedPercent}%` }}

@@ -8,6 +8,7 @@ import { fetchServerRuntimeRows, type ServerRuntimeRow } from './server-runtimes
 import { createWlsHttpError, withWlsRestTimeout } from '../wls-errors.ts'
 import { useAuth } from '../../auth/useAuth.ts'
 import type { DeploymentTargetRef } from './deployments'
+import { classifyJdbcPool } from './dashboard-jdbc-normalization.ts'
 import {
   dataSourceConfigCollectionQueryParams,
   dataSourceParamsQueryParams,
@@ -240,19 +241,10 @@ function isRuntimeServer(row: ServerRuntimeRow) {
   return row.state === 'RUNNING' || row.state === 'ADMIN' || row.state === 'STANDBY'
 }
 
+// Same thresholds as the dashboard (see dashboard-jdbc-normalization.ts), judged on this reading.
 function classifyDataSource(row: DataSourceRuntimeMetrics, runtimeAvailable = true): DataSourceSeverity {
   if (!runtimeAvailable) return 'unknown'
-  const state = row.state.toLowerCase()
-  if (
-    state === 'overloaded' ||
-    (row.waitingForConnectionCurrentCount ?? 0) > 0 ||
-    (row.leakedConnectionCount ?? 0) > 0
-  ) {
-    return 'critical'
-  }
-  if (state !== 'running' || row.deploymentState === 'UNPREPARED' || row.deploymentState === 0) return 'warning'
-  if (row.utilization !== null && row.utilization >= 0.9) return 'warning'
-  return 'healthy'
+  return classifyJdbcPool(row)
 }
 
 function emptyConfig() {

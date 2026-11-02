@@ -20,6 +20,7 @@ import { WorkManagers } from '@/routes/WorkManagers'
 import { NodeManager } from '@/routes/NodeManager'
 import { DomainConfigSnapshots } from '@/routes/DomainConfigSnapshots'
 import { ActionAudit } from '@/routes/ActionAudit'
+import { AlertRules } from '@/routes/AlertRules'
 import { Security } from '@/routes/Security'
 import { Messaging } from '@/routes/Messaging'
 
@@ -52,6 +53,7 @@ export default function App() {
         <Route path="/logs/:serverName" element={<LogDetails />} />
         <Route path="/config-snapshots" element={<DomainConfigSnapshots />} />
         <Route path="/audit" element={<ActionAudit />} />
+        <Route path="/alert-rules" element={<AlertRules />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Route>
     </Routes>

@@ -25,25 +25,15 @@ function jdbcPressure(snapshot: DashboardSnapshot) {
 function jmsPressure(snapshot: DashboardSnapshot) {
   if (snapshot.jms.status === 'failed') return { value: 'failed', detail: 'runtime', tone: 'warning' as const }
   if (snapshot.jms.items.length === 0) return { value: 'none', detail: 'configured', tone: 'unknown' as const }
-  if (snapshot.jmsRollup.paused > 0) {
+  // The tone follows the destinations' alert levels (rule thresholds, durations and ignores), so a
+  // queue with messages only turns amber once it is an issue.
+  const critical = snapshot.jms.items.some((item) => item.severity === 'critical')
+  const warning = snapshot.jms.items.some((item) => item.severity === 'warning')
+  if (snapshot.jmsRollup.messagesCurrent > 0 || snapshot.jmsRollup.messagesPending > 0 || critical || warning) {
     return {
       value: formatNumber(snapshot.jmsRollup.messagesCurrent),
       detail: `${formatNumber(snapshot.jmsRollup.messagesPending)} pending`,
-      tone: 'negative' as const,
-    }
-  }
-  if (snapshot.jmsRollup.zeroConsumerBacklog > 0) {
-    return {
-      value: formatNumber(snapshot.jmsRollup.messagesCurrent),
-      detail: `${formatNumber(snapshot.jmsRollup.messagesPending)} pending`,
-      tone: 'warning' as const,
-    }
-  }
-  if (snapshot.jmsRollup.messagesCurrent > 0 || snapshot.jmsRollup.messagesPending > 0) {
-    return {
-      value: formatNumber(snapshot.jmsRollup.messagesCurrent),
-      detail: `${formatNumber(snapshot.jmsRollup.messagesPending)} pending`,
-      tone: 'warning' as const,
+      tone: critical ? ('negative' as const) : warning ? ('warning' as const) : ('positive' as const),
     }
   }
   return {

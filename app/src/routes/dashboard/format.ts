@@ -1,3 +1,4 @@
+import { alertRuleLevel, getActiveAlertRules, type ResolvedAlertRules } from '../../api/alert-rules.ts'
 import type { DashboardFamily, DashboardIssue, DashboardSeverity } from '@/api/queries/domain-dashboard'
 import type { StatusTone } from '@/components'
 
@@ -39,10 +40,12 @@ export function deploymentLabel(value: string | number | null) {
   return String(value)
 }
 
-export function heapTone(percent: number | null | undefined): StatusTone {
+// Same thresholds as the heap.percent alert rule, judged on this reading.
+export function heapTone(percent: number | null | undefined, rules: ResolvedAlertRules = getActiveAlertRules()): StatusTone {
   if (percent === null || percent === undefined) return 'unknown'
-  if (percent >= 0.9) return 'negative'
-  if (percent >= 0.7) return 'warning'
+  const level = alertRuleLevel(rules.rules['heap.percent'], percent * 100)
+  if (level === 'critical') return 'negative'
+  if (level === 'warning') return 'warning'
   return 'positive'
 }
 

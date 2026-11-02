@@ -1,6 +1,7 @@
 import {
   Activity,
   Archive,
+  BellRing,
   ClipboardList,
   Database,
   FileText,
@@ -18,6 +19,7 @@ import { Fragment } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { APP_VERSION } from '@/app-version'
 import { readRuntimeConfig } from '@/api/runtime-config'
+import { useAlertRules } from '@/api/queries/alert-rules'
 import { useDomainDashboard } from '@/api/queries/domain-dashboard'
 import { useEnvironmentStatus } from '@/api/queries/environment-status'
 import { useRecordLocalRuntimeAlerts } from '@/api/queries/local-alerts'
@@ -52,6 +54,7 @@ const navItems = [
   { label: 'Logs', path: '/logs', icon: FileText, group: 'Operations' },
   { label: 'Config Snapshots', path: '/config-snapshots', icon: Archive, group: 'Operations' },
   { label: 'Action Audit', path: '/audit', icon: ClipboardList, group: 'Operations' },
+  { label: 'Alert Rules', path: '/alert-rules', icon: BellRing, group: 'Operations' },
 ] as const
 
 const routeLabels = new Map(navItems.map((item) => [item.path, item.label]))
@@ -236,6 +239,8 @@ export function AppShell() {
   const navigate = useNavigate()
   const runtimeConfig = readRuntimeConfig()
   const readOnlyLabel = demoReadOnlyModeLabel(runtimeConfig.readOnlyDemoMode)
+  // Loaded before the dashboard poll so its classifiers use the configured thresholds.
+  useAlertRules()
   const dashboardQuery = useDomainDashboard()
   const themeMode = useThemeMode()
 

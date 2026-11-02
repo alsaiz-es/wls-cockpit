@@ -25,6 +25,14 @@ import {
 } from './dashboard-family-fanout.ts'
 import { applicationHealthDetail, firstHealthReason } from './deployment-health-symptoms.ts'
 import { heapUtilization } from './heap-utilization.ts'
+import { AlertSustainTracker, getActiveAlertRules } from '../alert-rules.ts'
+import {
+  buildServerPressureIssues,
+  isDashboardIssueIgnored,
+  sustainedJdbcSeverity,
+  sustainedJmsSeverity,
+  type DashboardAlertContext,
+} from './dashboard-alert-levels.ts'
 
 export type DashboardSeverity = 'healthy' | 'warning' | 'critical' | 'unknown'
 export type DashboardFamily = 'servers' | 'jvm' | 'threads' | 'jdbc' | 'jms' | 'applications' | 'logs'
@@ -673,6 +681,7 @@ export function buildDashboardIssues(
   jms: FamilyResult<JmsRuntimeSummary>,
   applications: FamilyResult<ApplicationRuntimeSummary>,
   logs: FamilyResult<LogActivityRuntime>,
+  context: DashboardAlertContext = { rules: getActiveAlertRules(), tracker: null, now: Date.now() },
 ): DashboardIssue[] {
   const issues: DashboardIssue[] = []
 
@@ -695,28 +704,9 @@ export function buildDashboardIssues(
         snapshotServers: issueSnapshotServers(server.name),
       })
     }
-
-    if (!server.threads) return
-
-    const pending = server.threads.pending ?? 0
-    const hogging = server.threads.hogging ?? 0
-    const stuck = server.threads.stuck
-    const queue = server.threads.queueLength ?? 0
-    if (pending === 0 && hogging === 0 && stuck === 0) return
-
-    issues.push({
-      id: `threads:${server.name}`,
-      severity: pending > 0 || stuck > 0 ? 'critical' : 'warning',
-      family: 'threads',
-      title: `${server.name} has execution pressure`,
-      detail: `Pending ${pending}, hogging ${hogging}, stuck ${stuck}, queue ${queue}.`,
-      hint: stuck > 0
-        ? 'Capture evidence and inspect thread detail/logs before restarting or clearing load.'
-        : 'Inspect server metrics and logs to confirm whether execute-thread pressure is sustained.',
-      serverName: server.name,
-      snapshotServers: issueSnapshotServers(server.name),
-    })
   })
+
+  issues.push(...buildServerPressureIssues(servers, context))
 
   jdbc.items.forEach((pool) => {
     if (pool.severity === 'healthy' || pool.severity === 'unknown') return
@@ -789,7 +779,7 @@ export function buildDashboardIssues(
     })
   })
 
-  return issues.sort((a, b) => {
+  return issues.filter((issue) => !isDashboardIssueIgnored(issue, context.rules)).sort((a, b) => {
     if (a.severity !== b.severity) return a.severity === 'critical' ? -1 : 1
     return a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' })
   })
@@ -802,16 +792,34 @@ function buildSeverity(issues: DashboardIssue[], servers: ServerRuntimeRow[]): D
   return 'healthy'
 }
 
-export async function fetchDomainDashboardSnapshot(creds: WlsCredentials): Promise<DashboardSnapshot> {
+// One tracker per signed-in domain and user, kept across polls so durations span readings.
+let liveAlertTracker: { scope: string; tracker: AlertSustainTracker } | null = null
+
+function liveAlertTrackerFor(creds: WlsCredentials) {
+  const scope = wlsCredentialCacheKey(creds)
+  if (liveAlertTracker?.scope !== scope) liveAlertTracker = { scope, tracker: new AlertSustainTracker() }
+  return liveAlertTracker.tracker
+}
+
+// Live polling passes the tracker; a one-off snapshot (the diagnostic export) judges each reading
+// on its own and leaves the live durations untouched.
+export async function fetchDomainDashboardSnapshot(
+  creds: WlsCredentials,
+  options: { tracker?: AlertSustainTracker | null } = {},
+): Promise<DashboardSnapshot> {
   const servers = await fetchServerRuntimeRows(creds)
-  const [jdbc, jms, applications, logs] = await Promise.all([
+  const [rawJdbc, rawJms, applications, logs] = await Promise.all([
     familyResult('jdbc', () => fetchJdbcPools(creds, servers)),
     familyResult('jms', () => fetchJmsRuntime(creds, servers)),
     familyResult('applications', () => fetchApplications(creds, servers)),
     familyResult('logs', () => fetchLogActivity(creds, servers)),
   ])
 
-  const issues = buildDashboardIssues(servers, jdbc, jms, applications, logs)
+  const context: DashboardAlertContext = { rules: getActiveAlertRules(), tracker: options.tracker ?? null, now: Date.now() }
+  const jdbc = { ...rawJdbc, items: rawJdbc.items.map((pool) => ({ ...pool, severity: sustainedJdbcSeverity(pool, context) })) }
+  const jms = { ...rawJms, items: rawJms.items.map((item) => ({ ...item, severity: sustainedJmsSeverity(item, context) })) }
+  const issues = buildDashboardIssues(servers, jdbc, jms, applications, logs, context)
+  context.tracker?.prune(context.now)
   const partialFailures = dashboardPartialFailures([
     { family: 'jdbc', result: jdbc },
     { family: 'jms', result: jms },
@@ -847,7 +855,7 @@ export function useDomainDashboard(options: { enabled?: boolean } = {}) {
     placeholderData: (previousData) => previousData,
     queryFn: async () => {
       if (!creds) throw new Error('not authenticated')
-      return fetchDomainDashboardSnapshot(creds)
+      return fetchDomainDashboardSnapshot(creds, { tracker: liveAlertTrackerFor(creds) })
     },
   })
 

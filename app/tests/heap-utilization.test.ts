@@ -2,11 +2,13 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
   heapSegments,
+  heapThresholdMarks,
   heapToneForPercent,
   heapUtilization,
   heapUtilizationLabel,
   normalizeHeapUsage,
 } from '../src/api/queries/heap-utilization.ts'
+import { resolveAlertRules, validateAlertRulesConfig } from '../src/api/alert-rules.ts'
 
 test('normalizes WebLogic heap fields with used-over-max formula', () => {
   const heap = normalizeHeapUsage({
@@ -40,12 +42,19 @@ test('rejects invalid heap inputs and clamps utilization labels', () => {
   assert.equal(heapSegments({ current: 1, committed: 2, max: 0 }), null)
 })
 
-test('heap tone thresholds transition at 70 and 85 percent', () => {
-  assert.equal(heapToneForPercent(69), 'positive')
-  assert.equal(heapToneForPercent(70), 'warning')
-  assert.equal(heapToneForPercent(84.99), 'warning')
-  assert.equal(heapToneForPercent(85), 'negative')
+test('heap tone follows the heap.percent rule: 85 and 95 percent by default', () => {
+  assert.equal(heapToneForPercent(84.99), 'positive')
+  assert.equal(heapToneForPercent(85), 'warning')
+  assert.equal(heapToneForPercent(94.99), 'warning')
+  assert.equal(heapToneForPercent(95), 'negative')
   assert.equal(heapToneForPercent(null), 'neutral')
+  assert.deepEqual(heapThresholdMarks(), [85, 95])
+
+  const { config } = validateAlertRulesConfig({ rules: { 'heap.percent': { warning: 75, critical: null } } })
+  const rules = resolveAlertRules(config, null)
+  assert.equal(heapToneForPercent(80, rules), 'warning')
+  assert.equal(heapToneForPercent(99, rules), 'warning')
+  assert.deepEqual(heapThresholdMarks(rules), [75])
 })
 
 test('committed-aware heap segments clamp display values', () => {

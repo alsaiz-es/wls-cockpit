@@ -576,6 +576,22 @@ requests failed):
   tooltip describing the failure.
 - Add an info banner above the table summarizing what is missing.
 
+### 9.5 Alert thresholds
+
+Warning and critical for a measured signal (pending requests, heap, pool
+waits, JMS backlog…) come from the alert rules in `src/api/alert-rules.ts`,
+which the operator can override in `~/.wls-cockpit/alerts.yaml` (Alert Rules
+page). Never hardcode a threshold in a classifier or a tone helper.
+
+- The dashboard issue queue and the alert bell raise a signal only after it
+  has held for the rule's duration. One busy reading is not an issue.
+- List pages, badges and bars colour the current reading with the same
+  thresholds, without the duration.
+- States WebLogic reports itself (failed, overloaded, paused, unhealthy
+  deployments) are immediate and not configurable.
+- A counter that only grows (leaked connections) alerts on its increase, never
+  on its absolute value.
+
 ## 10. Data display
 
 ### Numbers
@@ -607,8 +623,10 @@ requests failed):
 ### Heap / CPU bars
 
 - 80 px wide, 6 px tall, 3 px radius.
-- Filled portion uses status threshold colors: green < 70 %, amber 70–89 %,
-  red ≥ 90 %.
+- Filled portion uses status threshold colors from the `heap.percent` alert
+  rule (§9.5): green below its warning threshold, amber from warning, red from
+  critical (85 % and 95 % by default). Thin marks on the bar sit at those two
+  thresholds.
 - Numeric label (e.g. `67%`) sits 4 px to the right of the bar in the same
   status color. Right-aligned in the cell so columns line up.
 

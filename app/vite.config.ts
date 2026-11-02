@@ -9,7 +9,8 @@ import {
   normalizeWlsTarget,
 } from './src/api/proxy-target.ts'
 import { defaultWlsVersion, type WlsVersion } from './src/api/wls-version.ts'
-import { handleDeploymentUploadRequest, handleJmsJmxRequest, proxyWlsRequest } from './server/http.ts'
+import { handleAlertRulesRequest, handleDeploymentUploadRequest, handleJmsJmxRequest, proxyWlsRequest } from './server/http.ts'
+import { ALERT_RULES_PATH } from './src/api/alert-rules.ts'
 
 function requestHeader(req: IncomingMessage, name: string) {
   const value = req.headers[name.toLowerCase()]
@@ -32,6 +33,10 @@ function wlsProxyPlugin(targetUrl: string, defaultVersion: WlsVersion): Plugin {
     name: 'wls-cockpit-dev-wls-proxy',
     configureServer(server) {
       server.middlewares.use((req: IncomingMessage, res: ServerResponse, next) => {
+        if (req.url?.split('?')[0] === ALERT_RULES_PATH) {
+          void handleAlertRulesRequest(req, res, { targetUrl, defaultVersion })
+          return
+        }
         if (!req.url?.startsWith('/api/wls') && !req.url?.startsWith('/api/jms') && !req.url?.startsWith('/api/deployments')) {
           next()
           return

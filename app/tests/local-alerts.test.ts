@@ -17,6 +17,7 @@ import {
   type LocalAlertCondition,
 } from '../src/api/queries/local-alerts.ts'
 import type { DashboardSnapshot } from '../src/api/queries/domain-dashboard.ts'
+import { DEFAULT_RESOLVED_ALERT_RULES, resolveAlertRules, validateAlertRulesConfig } from '../src/api/alert-rules.ts'
 
 function snapshot(overrides: Partial<DashboardSnapshot> = {}): DashboardSnapshot {
   return {
@@ -326,5 +327,65 @@ test('application issues quote the WebLogic health symptom instead of a generic 
   assert.equal(
     applicationHealthDetail({ healthState: 'ok', overallHealthState: 'warn', healthReason: null }),
     'Health ok, overall warn (WebLogic gave no symptom).',
+  )
+})
+
+test('thread and heap issues alert as server conditions, and ignored resources stay quiet', () => {
+  const pressured = snapshot({
+    issues: [
+      {
+        id: 'threads:AdminServer',
+        severity: 'critical',
+        family: 'threads',
+        title: 'AdminServer has execution pressure',
+        detail: 'Pending 0, hogging 0, stuck 1, queue 0.',
+        serverName: 'AdminServer',
+      },
+      {
+        id: 'heap:server1',
+        severity: 'warning',
+        family: 'jvm',
+        title: 'server1 heap usage is high',
+        detail: 'Heap 88% of max for at least 2m.',
+        serverName: 'server1',
+      },
+    ],
+    jms: {
+      status: 'available',
+      failures: [],
+      items: [{
+        serverName: 'AdminServer',
+        jmsServerName: 'DemoJMSServer',
+        destinationName: 'DemoModule!DemoQueue',
+        destinationType: 'Queue',
+        state: 'running',
+        destinationsCurrentCount: null,
+        messagesCurrentCount: 7,
+        messagesPendingCount: 0,
+        consumersCurrentCount: 0,
+        consumptionPaused: false,
+        productionPaused: false,
+        insertionPaused: false,
+        consumptionPausedState: null,
+        productionPausedState: null,
+        insertionPausedState: null,
+        severity: 'warning',
+      }],
+    },
+  })
+
+  assert.deepEqual(
+    projectDashboardAlertConditions(pressured, DEFAULT_RESOLVED_ALERT_RULES).map((item) => [item.condition, item.severity, item.resourceLabel]),
+    [
+      ['execution-pressure', 'critical', 'AdminServer'],
+      ['jms-pressure', 'warning', 'DemoModule!DemoQueue'],
+      ['heap-pressure', 'warning', 'server1'],
+    ],
+  )
+
+  const { config } = validateAlertRulesConfig({ ignore: [{ jms: 'DemoModule!*' }, { servers: 'server1' }] })
+  assert.deepEqual(
+    projectDashboardAlertConditions(pressured, resolveAlertRules(config, null)).map((item) => item.condition),
+    ['execution-pressure'],
   )
 })

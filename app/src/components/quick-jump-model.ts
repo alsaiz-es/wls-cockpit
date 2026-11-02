@@ -25,6 +25,7 @@ const topLevelEntries: QuickJumpEntry[] = [
   { id: 'route:logs', label: 'Logs', detail: 'Server log activity', family: 'Route', href: '/logs', keywords: ['log', 'tail', 'records'] },
   { id: 'route:config-snapshots', label: 'Config Snapshots', detail: 'Local config snapshot diffs', family: 'Route', href: '/config-snapshots', keywords: ['configuration', 'diff'] },
   { id: 'route:audit', label: 'Action Audit', detail: 'Local mutation audit', family: 'Route', href: '/audit', keywords: ['audit', 'actions'] },
+  { id: 'route:alert-rules', label: 'Alert Rules', detail: 'Alert thresholds and alerts.yaml', family: 'Route', href: '/alert-rules', keywords: ['alerts', 'thresholds', 'yaml'] },
 ]
 
 function segment(value: string) {

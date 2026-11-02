@@ -1,3 +1,5 @@
+import { alertRuleLevel, getActiveAlertRules, type ResolvedAlertRules } from '../alert-rules.ts'
+
 export interface HeapUsage {
   current: number
   max: number
@@ -48,11 +50,23 @@ export function heapUtilizationLabel(heap: HeapUsage | null | undefined) {
 
 export type HeapTone = 'positive' | 'warning' | 'negative' | 'neutral'
 
-export function heapToneForPercent(percent: number | null | undefined): HeapTone {
+// Colours follow the heap.percent alert rule (85 % and 95 % by default), judged on this reading.
+export function heapToneForPercent(
+  percent: number | null | undefined,
+  rules: ResolvedAlertRules = getActiveAlertRules(),
+): HeapTone {
   if (typeof percent !== 'number' || !Number.isFinite(percent)) return 'neutral'
-  if (percent >= 85) return 'negative'
-  if (percent >= 70) return 'warning'
+  const level = alertRuleLevel(rules.rules['heap.percent'], percent)
+  if (level === 'critical') return 'negative'
+  if (level === 'warning') return 'warning'
   return 'positive'
+}
+
+// Where the heap bar draws its threshold marks, in percent; a level that is off has no mark.
+export function heapThresholdMarks(rules: ResolvedAlertRules = getActiveAlertRules()) {
+  const rule = rules.rules['heap.percent']
+  if (!rule.enabled) return []
+  return [rule.warning, rule.critical].filter((value): value is number => value !== null && value > 0 && value < 100)
 }
 
 export function heapTone(heap: HeapUsage | null | undefined): HeapTone {

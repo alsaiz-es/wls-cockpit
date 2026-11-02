@@ -2,6 +2,7 @@ import { useEffect, useSyncExternalStore } from 'react'
 import { wlsCredentialCacheKey, type WlsCredentials } from '../client.ts'
 import { applicationHealthDetail } from './deployment-health-symptoms.ts'
 import type { DashboardSnapshot, DashboardSeverity } from './domain-dashboard.ts'
+import { getActiveAlertRules, isAlertIgnored, type ResolvedAlertRules } from '../alert-rules.ts'
 import {
   jdbcMetricResourceId,
   jmsMetricResourceId,
@@ -217,13 +218,50 @@ function jmsPressureConditions(snapshot: DashboardSnapshot): LocalAlertCondition
   })
 }
 
-export function projectDashboardAlertConditions(snapshot: DashboardSnapshot): LocalAlertCondition[] {
+// Thread and heap pressure come from the dashboard issues, which already apply the rule
+// durations and the ignore list.
+function serverPressureConditions(snapshot: DashboardSnapshot): LocalAlertCondition[] {
+  return snapshot.issues.flatMap((issue) => {
+    if ((issue.family !== 'threads' && issue.family !== 'jvm') || !issue.serverName) return []
+    const condition = issue.family === 'threads' ? 'execution-pressure' : 'heap-pressure'
+    const resourceId = serverMetricResourceId(issue.serverName)
+    return [{
+      id: conditionId('servers', resourceId, condition),
+      family: 'servers',
+      resourceId,
+      resourceLabel: issue.serverName,
+      condition,
+      severity: issue.severity,
+      title: issue.title,
+      detail: issue.detail,
+      route: `/servers/${segment(issue.serverName)}`,
+    }]
+  })
+}
+
+function conditionIgnored(condition: LocalAlertCondition, snapshot: DashboardSnapshot, rules: ResolvedAlertRules) {
+  if (rules.ignore.length === 0) return false
+  if (condition.family === 'servers') return isAlertIgnored(rules, 'servers', condition.resourceLabel)
+  if (condition.family === 'jdbc') return isAlertIgnored(rules, 'jdbc', condition.resourceLabel)
+  if (condition.family === 'jms') {
+    const item = snapshot.jms.items.find((candidate) => (candidate.destinationName ?? candidate.jmsServerName) === condition.resourceLabel)
+    return isAlertIgnored(rules, 'jms', condition.resourceLabel, item?.jmsServerName)
+  }
+  const app = snapshot.applications.items.find((candidate) => candidate.name === condition.resourceLabel)
+  return isAlertIgnored(rules, 'deployments', condition.resourceLabel, app?.deploymentName)
+}
+
+export function projectDashboardAlertConditions(
+  snapshot: DashboardSnapshot,
+  rules: ResolvedAlertRules = getActiveAlertRules(),
+): LocalAlertCondition[] {
   return [
     ...serverFailureCondition(snapshot),
+    ...serverPressureConditions(snapshot),
     ...deploymentFailureConditions(snapshot),
     ...jdbcPressureConditions(snapshot),
     ...jmsPressureConditions(snapshot),
-  ].sort((a, b) => {
+  ].filter((condition) => !conditionIgnored(condition, snapshot, rules)).sort((a, b) => {
     if (a.severity !== b.severity) return a.severity === 'critical' ? -1 : 1
     if (a.family !== b.family) return a.family.localeCompare(b.family)
     return a.resourceLabel.localeCompare(b.resourceLabel, undefined, { numeric: true, sensitivity: 'base' })

@@ -31,7 +31,8 @@ running domain:
 - **Action audit** — lifecycle, deployment, data source, JMS, JTA and user lockout actions and
   every configuration change sent through Cockpit are recorded locally.
 - **Config snapshots and local alerts** — capture and compare domain configuration, and raise
-  local alerts from runtime signals.
+  local alerts from runtime signals, with thresholds you can tune per domain (see
+  [Alert thresholds](#alert-thresholds)).
 
 ## Screenshots
 
@@ -123,10 +124,53 @@ Usernames and passwords are never accepted on the command line: `--user`, `--use
   machine.
 - **Local data.** Connection profiles (name, target URL, REST version, optional username) and
   the audit log are stored under `~/.wls-cockpit/` (`connection-profiles.json`,
-  `action-audit.jsonl`). Set `WLS_COCKPIT_DATA_DIR` to use another directory. The browser also
+  `action-audit.jsonl`), next to the optional `alerts.yaml`. Set `WLS_COCKPIT_DATA_DIR` to use
+  another directory. The browser also
   keeps profiles, theme and config snapshots in `localStorage` for the Cockpit origin.
 
 To report a vulnerability, see [SECURITY.md](SECURITY.md).
+
+## Alert thresholds
+
+The dashboard issue queue and the alert bell raise a measured signal only after it has held for
+a while, so a single busy reading (a startup burst, a GC pause) is not an issue:
+
+| Rule | Warning | Critical | Held for |
+|---|---|---|---|
+| `threads.pending` — pending user requests | ≥ 5 | ≥ 20 | 1 min |
+| `threads.hogging` — hogging threads | ≥ 5 | — | 2 min |
+| `threads.stuck` — stuck threads | — | ≥ 1 | immediately |
+| `heap.percent` — heap used, % of max | ≥ 85 | ≥ 95 | 2 min |
+| `jdbc.waiting` — requests waiting for a connection | ≥ 1 | ≥ 5 | 30 s |
+| `jdbc.utilization` — active connections, % of max capacity | ≥ 85 | ≥ 95 | 1 min |
+| `jdbc.leaked` — new leaked connections | ≥ 1 | — | within 10 min |
+| `jms.noConsumers` — messages on a destination without consumers | ≥ 1 | — | 5 min |
+| `jms.backlog` — current plus pending messages on a destination | ≥ 1,000 | ≥ 10,000 | 5 min |
+
+States WebLogic reports itself (failed or overloaded servers and pools, paused destinations,
+unhealthy deployments) always alert at once. List pages, badges and heap bars colour the current
+reading with the same thresholds.
+
+To change them, create `~/.wls-cockpit/alerts.yaml` (or `alerts.yaml` in `WLS_COCKPIT_DATA_DIR`).
+Keep only what you change; `null` turns a level off, and `domains` applies to one connection,
+by its name in Cockpit:
+
+```yaml
+version: 1
+rules:
+  heap.percent: { warning: 90, critical: 97, for: 5m }
+  threads.hogging: { enabled: false }
+ignore:
+  - jms: "TestModule!*"        # servers, jdbc, jms or deployments; * matches anything
+domains:
+  lab-1412:
+    rules:
+      jms.noConsumers: { for: 30m }
+```
+
+Cockpit reads the file again when it changes. The **Alert Rules** page shows the thresholds in
+force, where each one comes from and any error in the file with its line; invalid entries are
+skipped and the rest still apply.
 
 ## Supported WebLogic versions
 
