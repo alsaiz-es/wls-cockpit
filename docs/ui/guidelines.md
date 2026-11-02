@@ -446,10 +446,18 @@ scannable next to the runtime data.
   should not leave disabled buttons that imply the operation could be
   unlocked from the current view.
 
-### 7.5 Drawers
+### 7.5 Detail pages and drawers
 
-Drill-down content opens in a **right-side drawer**, not a new page. Drawer
-width: 480 px (resizable later).
+Drill-down opens a **detail page** (`/servers/:name`, `/deployments/:server/:name`,
+…): the page header of §4 with the `← <list>` link that restores the list's
+filters and sort, tabs when the object has several views (Overview, Metrics,
+Configuration, Debug), a `<KeyValueGrid>` (§7.9) for its facts, and tables for
+its children. Pages, unlike drawers, can be linked, reloaded and opened side by
+side, which an operator comparing two servers needs.
+
+A **right-side drawer** is reserved for short secondary content that must keep
+the list visible behind it. None exists today; if one is added, it follows
+the rules below. Drawer width: 480 px (resizable later).
 
 - Slide-in animation: 200 ms ease-out. No backdrop blur (it tanks perf and
   hides the data behind, which is the point of a drawer over a modal).
