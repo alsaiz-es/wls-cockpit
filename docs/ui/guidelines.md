@@ -480,6 +480,15 @@ exception).
 Card: 1 px border in `border`, 8 px radius, no shadow, 16 px padding,
 `surface-1` background.
 
+### 7.9 Key–value grids
+
+Facts about one object on a detail page (identity, configuration, runtime
+metadata, counters nobody charts) go in a `<KeyValueGrid>`: rows of 32 px
+with an 11 px uppercase muted label on the left and the value on the right,
+in two to four columns. Monospace only for identifiers, paths, versions and
+numbers; states and vendor names stay sans. Keep stat tiles (§7.8) for the
+three or four numbers an operator watches, not for every field.
+
 ## 8. Iconography
 
 - Library: `lucide-react`.
@@ -660,6 +669,7 @@ do not all exist yet — they appear when their first feature needs them.
 - `<SelectionBar count actions>` — floating action bar (§7.7).
 - `<HeapBar value max>` — labeled progress bar (§10).
 - `<RelativeTime value>` — `12m ago` with absolute tooltip (§10).
+- `<KeyValueGrid items columns>` — label–value rows for detail pages (§7.9).
 - `<MonoText>` — `font-mono` text wrapper for identifiers and paths.
 
 When in doubt, **add a primitive** rather than inline one-off classes

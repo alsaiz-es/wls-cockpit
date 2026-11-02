@@ -5,7 +5,6 @@ import { readOnlyDemoModeEnabled } from '@/api/runtime-config'
 import {
   useDeploymentRuntimeDetail,
   type DeploymentHealthSymptom,
-  type DeploymentRuntimeRow,
   type DeploymentSeverity,
   type DeploymentTargetRef,
 } from '@/api/queries/deployments'
@@ -29,7 +28,7 @@ import {
   type DeploymentWebModuleAdvancedMetadata,
 } from '@/api/queries/deployment-web-modules'
 import { Button } from '@/components/ui/button'
-import { MonoText, PageHeader, StatusBadge, type StatusTone } from '@/components'
+import { KeyValueGrid, MonoText, PageHeader, StatusBadge, type StatusTone } from '@/components'
 import { detailReturnPath } from './detail-return-state'
 import { demoSensitiveValue } from './demo-readonly-values'
 import { routeParam } from './route-params'
@@ -102,26 +101,6 @@ function symptomCategoryTone(symptom: DeploymentHealthSymptom): StatusTone {
   if (symptom.category === 'jms' || symptom.category === 'resource') return 'warning'
   if (symptom.category === 'deployment') return 'neutral'
   return 'unknown'
-}
-
-function Metric({
-  label,
-  value,
-  detail,
-}: {
-  label: string
-  value: string
-  detail?: string
-}) {
-  return (
-    <div className="border-border bg-surface-1 min-h-[72px] border px-3 py-2">
-      <div className="text-muted-foreground text-[11px] uppercase leading-[14px] tracking-[0.04em]">{label}</div>
-      <MonoText className="mt-2 block truncate text-[18px] leading-6" title={value}>
-        {value}
-      </MonoText>
-      {detail ? <div className="text-muted-foreground mt-1 truncate text-xs">{detail}</div> : null}
-    </div>
-  )
 }
 
 function HealthSymptomsPanel({ symptoms }: { symptoms: DeploymentHealthSymptom[] }) {
@@ -217,16 +196,6 @@ function PartialBanner({
         Retry
       </Button>
     </div>
-  )
-}
-
-function ScopeBadge({ row }: { row: DeploymentRuntimeRow }) {
-  return (
-    <StatusBadge
-      kind="custom"
-      tone={row.scope === 'external' ? 'positive' : 'neutral'}
-      label={row.scope}
-    />
   )
 }
 
@@ -856,50 +825,23 @@ export function DeploymentDetails() {
 
       {row ? (
         <div className="space-y-4">
-          <div className="grid gap-3 md:grid-cols-4">
-            <div className="border-border bg-surface-1 min-h-[72px] border px-3 py-2">
-              <div className="text-muted-foreground text-[11px] uppercase leading-[14px] tracking-[0.04em]">Status</div>
-              <div className="mt-2">
-                <StatusBadge kind="custom" tone={severityTone(row.severity)} label={row.severity} />
-              </div>
-            </div>
-            <div className="border-border bg-surface-1 min-h-[72px] border px-3 py-2">
-              <div className="text-muted-foreground text-[11px] uppercase leading-[14px] tracking-[0.04em]">Scope</div>
-              <div className="mt-2">
-                <ScopeBadge row={row} />
-              </div>
-            </div>
-            <Metric label="Server" value={row.serverName} />
-            <Metric label="Target" value={row.targetName} />
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-4">
-            <div className="border-border bg-surface-1 min-h-[72px] border px-3 py-2">
-              <div className="text-muted-foreground text-[11px] uppercase leading-[14px] tracking-[0.04em]">Health</div>
-              <div className="mt-2">
-                <StatusBadge kind="wls-health" value={row.healthState} />
-              </div>
-            </div>
-            <div className="border-border bg-surface-1 min-h-[72px] border px-3 py-2">
-              <div className="text-muted-foreground text-[11px] uppercase leading-[14px] tracking-[0.04em]">Overall</div>
-              <div className="mt-2">
-                <StatusBadge kind="wls-health" value={row.overallHealthState} />
-              </div>
-            </div>
-            <Metric label="Active" value={formatActiveVersionState(row.activeVersionState)} />
-            <Metric label="Deploy" value={formatDeploymentState(row.deploymentState)} />
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-3">
-            <Metric label="Deployment" value={row.deploymentName} />
-            <Metric label="Version" value={row.applicationVersion ?? '-'} />
-            <Metric label="Lifecycle" value={row.lifecycleSupported ? 'SUPPORTED' : 'RUNTIME ONLY'} />
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-2">
-            <Metric label="Configured Targets" value={targetSummary(row.configuredTargets)} />
-            <Metric label="Config" value={row.configurationSupported ? 'EDIT TREE' : 'RUNTIME ONLY'} />
-          </div>
+          <KeyValueGrid
+            items={[
+              { label: 'Status', value: <StatusBadge kind="custom" tone={severityTone(row.severity)} label={row.severity} /> },
+              { label: 'Server', value: row.serverName, mono: true },
+              { label: 'Version', value: row.applicationVersion ?? '–', mono: true },
+              { label: 'Health', value: <StatusBadge kind="wls-health" value={row.healthState} /> },
+              { label: 'Target', value: row.targetName, mono: true },
+              { label: 'Active', value: formatActiveVersionState(row.activeVersionState) },
+              { label: 'Overall', value: <StatusBadge kind="wls-health" value={row.overallHealthState} /> },
+              { label: 'Configured Targets', value: targetSummary(row.configuredTargets), mono: true },
+              { label: 'Deploy', value: formatDeploymentState(row.deploymentState) },
+              { label: 'Scope', value: <span className="capitalize">{row.scope}</span> },
+              { label: 'Deployment', value: row.deploymentName, mono: true },
+              { label: 'Lifecycle', value: row.lifecycleSupported ? 'Supported' : 'Runtime only' },
+              { label: 'Config', value: row.configurationSupported ? 'Edit tree' : 'Runtime only' },
+            ]}
+          />
 
           <HealthSymptomsPanel symptoms={row.healthSymptoms} />
 

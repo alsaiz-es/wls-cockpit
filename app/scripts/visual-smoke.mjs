@@ -178,7 +178,7 @@ const liveChecks = [
   {
     name: 'deployment-details-live',
     path: '/deployments/AdminServer/WLSCockpitDemoApp',
-    expected: ['WLSCockpitDemoApp', 'Single application runtime snapshot.', 'STATUS', 'SCOPE', 'EXTERNAL', 'CONFIGURED TARGETS', 'Request Metrics', 'Configuration', 'SOURCE PATH', 'Web Modules', 'SOURCE', 'SESSION', 'COOKIE', 'RELOAD/JSP', 'FLAGS'],
+    expected: ['WLSCockpitDemoApp', 'Single application runtime snapshot.', 'STATUS', 'SCOPE', 'External', 'CONFIGURED TARGETS', 'Request Metrics', 'Configuration', 'SOURCE PATH', 'Web Modules', 'SOURCE', 'SESSION', 'COOKIE', 'RELOAD/JSP', 'FLAGS'],
     forbidden: ['Coming soon', 'Request failed', 'Deployment not found'],
   },
   {
@@ -344,7 +344,7 @@ const urlStateChecks = [
     expected: ['Deployments', 'Applications and deployment state.', 'INSTANCES', 'WLSCockpitDemoApp', 'AdminServer', 'External'],
     forbidden: ['Coming soon', 'Request failed'],
     detailHref: '/deployments/AdminServer/WLSCockpitDemoApp',
-    detailExpected: ['WLSCockpitDemoApp', 'Single application runtime snapshot.', 'STATUS', 'EXTERNAL', 'SOURCE PATH'],
+    detailExpected: ['WLSCockpitDemoApp', 'Single application runtime snapshot.', 'STATUS', 'External', 'SOURCE PATH'],
   },
   {
     name: 'data-sources-url-state-return',

@@ -9,7 +9,7 @@ import {
 } from '@/api/queries/data-sources'
 import { deploymentTargetLabel } from '@/api/queries/deployment-targets'
 import { Button } from '@/components/ui/button'
-import { MonoText, PageHeader, StatusBadge, type StatusTone } from '@/components'
+import { KeyValueGrid, MonoText, PageHeader, StatusBadge, type StatusTone } from '@/components'
 import { detailReturnPath } from './detail-return-state'
 import { demoSensitiveValue } from './demo-readonly-values'
 import { routeParam } from './route-params'
@@ -250,18 +250,21 @@ export function DataSourceDetails() {
                 Runtime availability, reserve, and wait counters from WebLogic.
               </p>
             </div>
-            <div className="grid gap-3 md:grid-cols-5">
-              <Metric label="Available" value={formatNumber(row.numAvailable)} />
-              <Metric label="Unavailable" value={formatNumber(row.numUnavailable)} />
-              <Metric label="Connections total" value={formatNumber(row.connectionsTotalCount)} />
-              <Metric label="Reserve requests" value={formatNumber(row.reserveRequestCount)} />
-              <Metric label="Failed reserves" value={formatNumber(row.failedReserveRequestCount)} />
-              <Metric label="Wait high" value={formatNumber(row.waitingForConnectionHighCount)} />
-              <Metric label="Wait total" value={formatNumber(row.waitingForConnectionTotal)} />
-              <Metric label="Wait success" value={formatNumber(row.waitingForConnectionSuccessTotal)} />
-              <Metric label="Wait failure" value={formatNumber(row.waitingForConnectionFailureTotal)} />
-              <Metric label="Delay ms" value={formatNumber(row.connectionDelayTime)} />
-            </div>
+            <KeyValueGrid
+              columns={4}
+              items={[
+                { label: 'Available', value: formatNumber(row.numAvailable), mono: true },
+                { label: 'Unavailable', value: formatNumber(row.numUnavailable), mono: true },
+                { label: 'Connections total', value: formatNumber(row.connectionsTotalCount), mono: true },
+                { label: 'Reserve requests', value: formatNumber(row.reserveRequestCount), mono: true },
+                { label: 'Failed reserves', value: formatNumber(row.failedReserveRequestCount), mono: true },
+                { label: 'Wait high', value: formatNumber(row.waitingForConnectionHighCount), mono: true },
+                { label: 'Wait total', value: formatNumber(row.waitingForConnectionTotal), mono: true },
+                { label: 'Wait success', value: formatNumber(row.waitingForConnectionSuccessTotal), mono: true },
+                { label: 'Wait failure', value: formatNumber(row.waitingForConnectionFailureTotal), mono: true },
+                { label: 'Delay ms', value: formatNumber(row.connectionDelayTime), mono: true },
+              ]}
+            />
           </section>
 
           <section className="border-border bg-surface-1 border px-3 py-3">
@@ -271,14 +274,17 @@ export function DataSourceDetails() {
                 Database product and JDBC driver metadata reported by the datasource runtime.
               </p>
             </div>
-            <div className="grid gap-3 md:grid-cols-3">
-              <Metric label="Enabled" value={formatBoolean(row.runtimeEnabled)} />
-              <Metric label="DB product" value={row.databaseProductName ?? '-'} />
-              <Metric label="DB version" value={row.databaseProductVersion ?? '-'} />
-              <Metric label="Runtime driver" value={row.runtimeDriverName ?? '-'} />
-              <Metric label="Driver version" value={row.runtimeDriverVersion ?? '-'} />
-              <Metric label="JDBC driver version" value={row.jdbcDriverVersion ?? '-'} />
-            </div>
+            <KeyValueGrid
+              columns={2}
+              items={[
+                { label: 'Enabled', value: formatBoolean(row.runtimeEnabled) },
+                { label: 'DB product', value: row.databaseProductName ?? '-' },
+                { label: 'DB version', value: row.databaseProductVersion ?? '-', mono: true },
+                { label: 'Runtime driver', value: row.runtimeDriverName ?? '-' },
+                { label: 'Driver version', value: row.runtimeDriverVersion ?? '-', mono: true },
+                { label: 'JDBC driver version', value: row.jdbcDriverVersion ?? '-', mono: true },
+              ]}
+            />
           </section>
 
           <section className="border-border bg-surface-1 border px-3 py-3">
@@ -288,14 +294,17 @@ export function DataSourceDetails() {
                 Prepared statement cache counters reported by the datasource runtime.
               </p>
             </div>
-            <div className="grid gap-3 md:grid-cols-3">
-              <Metric label="Current size" value={formatNumber(row.prepStmtCacheCurrentSize)} />
-              <Metric label="Access" value={formatNumber(row.prepStmtCacheAccessCount)} />
-              <Metric label="Hits" value={formatNumber(row.prepStmtCacheHitCount)} />
-              <Metric label="Misses" value={formatNumber(row.prepStmtCacheMissCount)} />
-              <Metric label="Adds" value={formatNumber(row.prepStmtCacheAddCount)} />
-              <Metric label="Deletes" value={formatNumber(row.prepStmtCacheDeleteCount)} />
-            </div>
+            <KeyValueGrid
+              columns={3}
+              items={[
+                { label: 'Current size', value: formatNumber(row.prepStmtCacheCurrentSize), mono: true },
+                { label: 'Access', value: formatNumber(row.prepStmtCacheAccessCount), mono: true },
+                { label: 'Hits', value: formatNumber(row.prepStmtCacheHitCount), mono: true },
+                { label: 'Misses', value: formatNumber(row.prepStmtCacheMissCount), mono: true },
+                { label: 'Adds', value: formatNumber(row.prepStmtCacheAddCount), mono: true },
+                { label: 'Deletes', value: formatNumber(row.prepStmtCacheDeleteCount), mono: true },
+              ]}
+            />
           </section>
 
           <section className="border-border bg-surface-1 border px-3 py-3">
@@ -306,22 +315,25 @@ export function DataSourceDetails() {
               </div>
               <MonoText className="text-muted-foreground text-[13px]">{row.systemResourceName ?? '-'}</MonoText>
             </div>
-            <div className="grid gap-3 md:grid-cols-4">
-              <Metric label="Configured targets" value={targetSummary(row)} />
-              <Metric label="JNDI" value={listSummary(row.jndiNames)} />
-              <Metric label="Driver" value={row.driverName ?? '-'} />
-              <Metric label="DB user" value={demoSensitiveValue(row.databaseUser, readOnlyDemoMode) ?? '-'} />
-              <Metric label="JDBC URL" value={demoSensitiveValue(row.url, readOnlyDemoMode) ?? '-'} />
-              <Metric label="Initial" value={formatNumber(row.configuredInitialCapacity)} />
-              <Metric label="Min" value={formatNumber(row.configuredMinCapacity)} />
-              <Metric label="Max" value={formatNumber(row.configuredMaxCapacity)} />
-              <Metric label="Test table" value={row.testTableName ?? '-'} />
-              <Metric label="Global TX" value={row.globalTransactionsProtocol ?? '-'} />
-              <Metric label="Algorithm" value={row.algorithmType ?? '-'} />
-              <Metric label="Scope" value={row.scope ?? '-'} />
-              <Metric label="Datasource list" value={demoSensitiveValue(row.dataSourceList, readOnlyDemoMode) ?? '-'} />
-              <Metric label="Keep after global TX" value={formatBoolean(row.keepConnAfterGlobalTx)} />
-            </div>
+            <KeyValueGrid
+              columns={3}
+              items={[
+                { label: 'Configured targets', value: targetSummary(row), mono: true },
+                { label: 'JNDI', value: listSummary(row.jndiNames), mono: true },
+                { label: 'Driver', value: row.driverName ?? '-', mono: true },
+                { label: 'DB user', value: demoSensitiveValue(row.databaseUser, readOnlyDemoMode) ?? '-', mono: true },
+                { label: 'JDBC URL', value: demoSensitiveValue(row.url, readOnlyDemoMode) ?? '-', mono: true },
+                { label: 'Initial', value: formatNumber(row.configuredInitialCapacity), mono: true },
+                { label: 'Min', value: formatNumber(row.configuredMinCapacity), mono: true },
+                { label: 'Max', value: formatNumber(row.configuredMaxCapacity), mono: true },
+                { label: 'Test table', value: row.testTableName ?? '-', mono: true },
+                { label: 'Global TX', value: row.globalTransactionsProtocol ?? '-' },
+                { label: 'Algorithm', value: row.algorithmType ?? '-' },
+                { label: 'Scope', value: row.scope ?? '-' },
+                { label: 'Datasource list', value: demoSensitiveValue(row.dataSourceList, readOnlyDemoMode) ?? '-', mono: true },
+                { label: 'Keep after global TX', value: formatBoolean(row.keepConnAfterGlobalTx) },
+              ]}
+            />
           </section>
         </div>
       ) : null}

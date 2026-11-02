@@ -58,7 +58,7 @@ import {
 import { useAuth } from '@/auth/useAuth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { ConfirmDialog, HeapBar, MonoText, PageHeader, RelativeTime, RestartRequiredBadge, StatusBadge } from '@/components'
+import { ConfirmDialog, HeapBar, KeyValueGrid, MonoText, PageHeader, RelativeTime, RestartRequiredBadge, StatusBadge } from '@/components'
 import { detailReturnPath } from './detail-return-state'
 import type { ServerMetricCaptureFixtureName } from './server-metrics-fixtures'
 import { ServerMetricsTab } from './server-metrics-tab'
@@ -1189,21 +1189,20 @@ function NodeManagerSection({
       ) : null}
 
       {!isLoading && !isError && row ? (
-        <div className="grid gap-3 md:grid-cols-4">
-          <div className="border-border bg-background min-h-[72px] border px-3 py-2">
-            <div className="text-muted-foreground text-[11px] uppercase leading-[14px] tracking-[0.04em]">Reachability</div>
-            <div className="mt-2">
-              <StatusBadge kind="custom" tone={nodeManagerTone(row)} label={row.reachable} />
-            </div>
-          </div>
-          <Metric label="Machine" value={row.machineName} />
-          <Metric label="Listen" value={formatNodeManagerEndpoint(row)} detail={row.nmType ?? row.runtimeType ?? '-'} />
-          <Metric
-            label="Socket Timeout"
-            value={row.socketCreateTimeoutMillis === null ? '-' : row.socketCreateTimeoutMillis.toLocaleString()}
-            detail="milliseconds"
-          />
-        </div>
+        <KeyValueGrid
+          columns={2}
+          items={[
+            { label: 'Reachability', value: <StatusBadge kind="custom" tone={nodeManagerTone(row)} label={row.reachable} /> },
+            { label: 'Machine', value: row.machineName, mono: true },
+            { label: 'Listen', value: formatNodeManagerEndpoint(row), mono: true },
+            { label: 'Type', value: row.nmType ?? row.runtimeType ?? '–', mono: true },
+            {
+              label: 'Socket Timeout',
+              value: row.socketCreateTimeoutMillis === null ? '–' : `${row.socketCreateTimeoutMillis.toLocaleString()} ms`,
+              mono: true,
+            },
+          ]}
+        />
       ) : null}
     </section>
   )
@@ -1875,12 +1874,17 @@ export function ServerDetails() {
                 Runtime identity from the latest per-server JVM snapshot.
               </p>
             </div>
-            <div className="grid gap-3 md:grid-cols-4">
-              <Metric label="Uptime" value={formatDuration(row.jvm?.uptime)} />
-              <Metric label="Java" value={row.jvm?.javaVersion ?? '-'} detail={row.jvm?.javaVendor ?? '-'} />
-              <Metric label="VM Vendor" value={row.jvm?.javaVmVendor ?? '-'} />
-              <Metric label="OS" value={row.jvm?.osName ?? '-'} detail={row.jvm?.osVersion ?? '-'} />
-            </div>
+            <KeyValueGrid
+              columns={2}
+              items={[
+                { label: 'Uptime', value: formatDuration(row.jvm?.uptime), mono: true },
+                { label: 'Java', value: row.jvm?.javaVersion ?? '–', mono: true },
+                { label: 'Java vendor', value: row.jvm?.javaVendor ?? '–' },
+                { label: 'VM Vendor', value: row.jvm?.javaVmVendor ?? '–' },
+                { label: 'OS', value: row.jvm?.osName ?? '–' },
+                { label: 'OS version', value: row.jvm?.osVersion ?? '–', mono: true },
+              ]}
+            />
           </section>
 
           {showHeapDumpUnsupported ? <HeapDumpUnsupportedSection support={heapDumpSupport} /> : null}
