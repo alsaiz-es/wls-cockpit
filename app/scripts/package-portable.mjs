@@ -172,7 +172,7 @@ function portableReadme(platform, version, { windowsLauncher = false } = {}) {
   const defaultStartNote =
     platform === 'windows' && windowsLauncher
       ? [
-          'Double-click "WLS Cockpit.exe". It starts a local server at http://127.0.0.1:8888 without a console window and opens it in the default browser; if Cockpit is already running there, it just opens the browser. Stop it with Quit in the app header.',
+          'Double-click "WLS Cockpit.exe". It starts a local server at http://127.0.0.1:8888 without a console window and opens it in the default browser; if Cockpit is already running there, it just opens the browser. It stops when you close its last browser tab or use Quit in the app header.',
           '',
           'The launcher is not code-signed: the first time, Windows SmartScreen may show "Windows protected your PC"; choose More info, then Run anyway.',
           '',

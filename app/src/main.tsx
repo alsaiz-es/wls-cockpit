@@ -6,8 +6,11 @@ import './index.css'
 import App from './App.tsx'
 import { AuthProvider } from '@/auth/AuthContext'
 import { installCredentialRejectionWatch } from '@/api/credential-rejection'
+import { readRuntimeConfig } from '@/api/runtime-config'
+import { startTabPresence } from '@/api/tab-presence'
 
 installCredentialRejectionWatch()
+if (readRuntimeConfig().exitWithLastTab) startTabPresence()
 
 const queryClient = new QueryClient({
   defaultOptions: {

@@ -4,6 +4,7 @@ import {
   deploymentStateLabel,
   settleDeploymentProgress,
 } from '../src/api/queries/deployment-progress.ts'
+import { progressNeedsRestart } from '../src/api/queries/deployment-progress.ts'
 
 const noSleep = async () => undefined
 
@@ -89,4 +90,16 @@ test('states read as words instead of STATE_* constants', () => {
   assert.equal(deploymentStateLabel('STATE_COMPLETED'), 'completed')
   assert.equal(deploymentStateLabel('STATE_DEFERRED'), 'deferred until the targets are available')
   assert.equal(deploymentStateLabel(null), null)
+})
+
+test('a completed deploy that waits for a server restart is recognised', () => {
+  assert.equal(
+    progressNeedsRestart({
+      state: 'STATE_COMPLETED',
+      deploymentMessages: ['[Deployer:149034]An exception occurred for task: [Deployer:149169]Requires server restart for completion..'],
+    }),
+    true,
+  )
+  assert.equal(progressNeedsRestart({ state: 'STATE_COMPLETED', deploymentMessages: ['ok'] }), false)
+  assert.equal(progressNeedsRestart(null), false)
 })

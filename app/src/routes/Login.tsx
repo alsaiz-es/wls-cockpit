@@ -3,6 +3,7 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Check, Pencil, PlugZap, Plus, Trash2 } from 'lucide-react'
 import { useAuth } from '@/auth/useAuth'
 import { clearSignInNotice, readSignInNotice } from '@/api/credential-rejection'
+import { QuitCockpitButton } from '@/components/quit-cockpit'
 import {
   activeConnectionFromProfile,
   createConnectionProfile,
@@ -244,8 +245,13 @@ export function Login() {
       <div className="mx-auto grid w-full max-w-5xl gap-4 lg:grid-cols-[minmax(260px,340px)_minmax(0,1fr)]">
         <Card className="rounded-lg">
           <CardHeader>
-            <CardTitle>WLS Cockpit</CardTitle>
-            <CardDescription>Domain connections</CardDescription>
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <CardTitle>WLS Cockpit</CardTitle>
+                <CardDescription>Domain connections</CardDescription>
+              </div>
+              {readRuntimeConfig().shutdownAvailable ? <QuitCockpitButton /> : null}
+            </div>
           </CardHeader>
           <CardContent className="space-y-3">
             <Button type="button" className="w-full justify-start" variant="outline" onClick={startCreateProfile}>

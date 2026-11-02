@@ -260,6 +260,7 @@ test('runtime config normalizes server defaults and falls back to safe defaults'
       actionAuditAvailable: false,
       connectionProfileCatalogAvailable: false,
       shutdownAvailable: false,
+      exitWithLastTab: false,
     },
   )
   assert.deepEqual(readRuntimeConfig({ defaultTargetUrl: 'file:///tmp/nope', defaultVersion: 'bad' }), {
@@ -271,6 +272,7 @@ test('runtime config normalizes server defaults and falls back to safe defaults'
     actionAuditAvailable: false,
     connectionProfileCatalogAvailable: false,
     shutdownAvailable: false,
+    exitWithLastTab: false,
   })
   assert.deepEqual(readRuntimeConfig({ readOnlyDemoMode: true }), {
     defaultTargetUrl: undefined,
@@ -281,6 +283,7 @@ test('runtime config normalizes server defaults and falls back to safe defaults'
     actionAuditAvailable: false,
     connectionProfileCatalogAvailable: false,
     shutdownAvailable: false,
+    exitWithLastTab: false,
   })
 
   assert.deepEqual(
@@ -300,6 +303,7 @@ test('runtime config normalizes server defaults and falls back to safe defaults'
       actionAuditAvailable: false,
       connectionProfileCatalogAvailable: false,
       shutdownAvailable: false,
+      exitWithLastTab: false,
     },
   )
 })
@@ -449,6 +453,7 @@ test('self-hosted server serves static app with injected runtime config', async 
     actionAuditAvailable: true,
     connectionProfileCatalogAvailable: true,
     shutdownAvailable: false,
+    exitWithLastTab: false,
   })
 })
 

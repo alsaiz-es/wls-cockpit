@@ -1,7 +1,8 @@
 // WLS Cockpit.exe, the double-click entry point of the Windows portable. A batch file cannot carry
 // an icon and keeps a console window open; this launcher starts the bundled Node runtime on the
-// Cockpit CLI without a console (port 8888, browser opened) and exits. If Cockpit already listens
-// there, the CLI opens the browser on it and exits.
+// Cockpit CLI without a console (port 8888, browser opened) and exits; Cockpit stops with Quit or
+// when its last browser tab closes. If Cockpit already listens there, the CLI opens the browser on
+// it and exits.
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <wchar.h>
@@ -36,7 +37,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE previous, PWSTR arguments, int
   }
 
   wchar_t command[PATH_CHARS * 2];
-  _snwprintf(command, PATH_CHARS * 2, L"\"%ls\" \"%ls\\dist-server\\wls-cockpit.mjs\" --host=127.0.0.1 --port=8888 --open",
+  _snwprintf(command, PATH_CHARS * 2, L"\"%ls\" \"%ls\\dist-server\\wls-cockpit.mjs\" --host=127.0.0.1 --port=8888 --open --exit-with-last-tab",
              node, folder);
 
   STARTUPINFOW startup = {0};

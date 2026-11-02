@@ -14,6 +14,8 @@ export interface CliOptions {
   readOnlyDemoMode: boolean
   // undefined = open the browser only when started from an interactive terminal.
   openBrowser?: boolean
+  // Stop when the last browser tab closes (double-click launchers).
+  exitWithLastTab: boolean
 }
 
 export type CliParseResult =
@@ -52,6 +54,7 @@ export function parseCliArgs(args: string[], env: Record<string, string | undefi
     defaultVersion: defaultWlsVersion(env.WLS_COCKPIT_VERSION),
     readOnlyDemoMode: parseBooleanFlag(env.WLS_COCKPIT_READ_ONLY),
     openBrowser: parseOptionalBooleanFlag(env.WLS_COCKPIT_OPEN),
+    exitWithLastTab: parseBooleanFlag(env.WLS_COCKPIT_EXIT_WITH_LAST_TAB),
   }
 
   for (let index = 0; index < args.length; ) {
@@ -105,6 +108,12 @@ export function parseCliArgs(args: string[], env: Record<string, string | undefi
       continue
     }
 
+    if (arg === '--exit-with-last-tab') {
+      parsed.exitWithLastTab = true
+      index += 1
+      continue
+    }
+
     if (arg === '--open' || arg === '--no-open') {
       parsed.openBrowser = arg === '--open'
       index += 1
@@ -128,6 +137,7 @@ export function parseCliArgs(args: string[], env: Record<string, string | undefi
       port: parsed.port ?? DEFAULT_PORT,
       defaultVersion: parsed.defaultVersion ?? '14.1.2.0.0',
       readOnlyDemoMode: parsed.readOnlyDemoMode ?? false,
+      exitWithLastTab: parsed.exitWithLastTab ?? false,
       ...(parsed.openBrowser === undefined ? {} : { openBrowser: parsed.openBrowser }),
     },
   }
@@ -145,6 +155,8 @@ export function helpText() {
     '  --read-only-demo  Hide mutation affordances and mask sensitive display values.',
     '  --open / --no-open  Open Cockpit in the default browser once it is listening. Defaults to',
     '             opening only when started from an interactive terminal (env WLS_COCKPIT_OPEN=0|1).',
+    '  --exit-with-last-tab  Stop when the last browser tab with Cockpit closes, as the double-click',
+    '             launchers do (env WLS_COCKPIT_EXIT_WITH_LAST_TAB=1).',
     '',
     'If Cockpit is already running on the chosen port, the browser is pointed at it instead.',
     'Stop Cockpit with Ctrl+C or with Quit in the app header.',
@@ -226,6 +238,7 @@ export async function runCli(args = process.argv.slice(2), env = process.env) {
     defaultVersion: result.value.defaultVersion,
     readOnlyDemoMode: result.value.readOnlyDemoMode,
     onShutdownRequest: () => stopServer(server),
+    exitWithLastTab: result.value.exitWithLastTab,
     bindHost: host,
   })
 

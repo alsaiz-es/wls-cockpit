@@ -57,7 +57,8 @@ Stop it with Ctrl+C or with **Quit** in the app header.
 Without Node.js, download the portable archive for your platform from
 [GitHub Releases](https://github.com/alsaiz-es/wls-cockpit/releases): on Windows unzip it and
 double-click `WLS Cockpit.exe`; on macOS open the disk image and `WLS Cockpit.app`; see
-[Portable builds](#portable-builds). Cockpit talks to the AdminServer's
+[Portable builds](#portable-builds). Started this way, Cockpit stops when you close its last
+browser tab (or with **Quit**). Cockpit talks to the AdminServer's
 `/management/weblogic/<version>` REST endpoints with HTTP Basic authentication.
 
 The safe way to try it against a real domain is read-only demo mode:
@@ -83,6 +84,7 @@ changes, such as a `Monitor`-only user.
 | `--port=<port>` | `WLS_COCKPIT_PORT` | `8080` | Local bind port. `0` picks an ephemeral port. |
 | `--version=<version>` | `WLS_COCKPIT_VERSION` | `14.1.2.0.0` | Default REST version for the seeded profile: `14.1.2.0.0` or `12.2.1.4.0`. |
 | `--read-only-demo` | `WLS_COCKPIT_READ_ONLY` | off | Read-only demo mode (see above). |
+| `--exit-with-last-tab` | `WLS_COCKPIT_EXIT_WITH_LAST_TAB` | off | Stop when the last browser tab with Cockpit closes, after a 10 s grace period. The double-click launchers use it. |
 | `--open` / `--no-open` | `WLS_COCKPIT_OPEN` | auto | Open the browser once Cockpit is listening. By default it opens only when started from an interactive terminal, so scripts and services stay headless. |
 | `--help` | | | Print usage. |
 

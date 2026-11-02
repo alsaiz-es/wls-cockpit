@@ -10,6 +10,7 @@ export interface WlsCockpitRuntimeConfig {
   actionAuditAvailable?: boolean
   connectionProfileCatalogAvailable?: boolean
   shutdownAvailable?: boolean
+  exitWithLastTab?: boolean
 }
 
 export interface ResolvedRuntimeConfig {
@@ -21,6 +22,7 @@ export interface ResolvedRuntimeConfig {
   actionAuditAvailable: boolean
   connectionProfileCatalogAvailable: boolean
   shutdownAvailable: boolean
+  exitWithLastTab: boolean
 }
 
 export interface RuntimeConfigSources {
@@ -77,6 +79,7 @@ export function resolveRuntimeConfig({ runtime, env = {} }: RuntimeConfigSources
     ),
     // Only the CLI server can stop itself; the Vite dev server never advertises it.
     shutdownAvailable: useRuntime ? runtime.shutdownAvailable === true : false,
+    exitWithLastTab: useRuntime ? runtime.exitWithLastTab === true : false,
   }
 }
 

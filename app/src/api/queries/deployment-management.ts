@@ -5,7 +5,7 @@ import { deploymentUploadRequestInit } from './deployment-upload'
 export { deploymentNameFromFileName } from './deployment-upload'
 import { createWlsHttpError, WlsRestError, withWlsRestTimeout } from '@/api/wls-errors'
 import { fetchDeploymentProgressObject } from './deployment-lifecycle'
-import { deploymentStateLabel, settleDeploymentProgress } from './deployment-progress'
+import { deploymentStateLabel, progressNeedsRestart, settleDeploymentProgress } from './deployment-progress'
 import { runInEditSession } from './edit-session-transaction'
 import { useAuth } from '@/auth/useAuth'
 import type { DeploymentTargetRef } from './deployments'
@@ -86,11 +86,18 @@ function progressError(data: unknown) {
   return null
 }
 
-function resultDetail(action: DeploymentConfigAction, deploymentName: string, targets: DeploymentTargetRef[], state: string | null) {
+function resultDetail(
+  action: DeploymentConfigAction,
+  deploymentName: string,
+  targets: DeploymentTargetRef[],
+  state: string | null,
+  needsRestart = false,
+) {
   const targetText = targets.length ? targets.map(deploymentTargetLabel).join(', ') : 'no targets'
   const label = deploymentStateLabel(state)
   const stateText = label ? ` · ${label}` : ''
-  if (action === 'deploy') return `Deploy ${deploymentName} to ${targetText}${stateText}`
+  const restartText = needsRestart ? ' · WebLogic finishes it when the target servers restart' : ''
+  if (action === 'deploy') return `Deploy ${deploymentName} to ${targetText}${stateText}${restartText}`
   if (action === 'undeploy') return `Undeploy ${deploymentName}${stateText}`
   return `Targets ${deploymentName}: ${targetText}${stateText}`
 }
@@ -100,14 +107,33 @@ function configResult(
   deploymentName: string,
   targets: DeploymentTargetRef[],
   state: string | null = null,
+  needsRestart = false,
 ): DeploymentConfigResult {
   return {
     action,
     deploymentName,
     targets,
     state,
-    detail: resultDetail(action, deploymentName, targets, state),
+    detail: resultDetail(action, deploymentName, targets, state, needsRestart),
   }
+}
+
+async function settledDeployResult(
+  creds: WlsCredentials,
+  deploymentName: string,
+  targets: DeploymentTargetRef[],
+  progress: unknown,
+) {
+  const settled = await settleDeploymentProgress(progress, (name) => fetchDeploymentProgressObject(creds, name))
+  const error = progressError(settled)
+  if (error) {
+    throw new WlsRestError({
+      kind: 'transport',
+      operation: `Deploy ${deploymentName}`,
+      message: redactSensitiveText(`Deploy ${deploymentName}: ${error}`),
+    })
+  }
+  return configResult('deploy', deploymentName, targets, progressState(settled), progressNeedsRestart(settled))
 }
 
 async function editRequest(
@@ -248,6 +274,8 @@ async function uploadApplication(
     DEPLOYMENT_UPLOAD_TIMEOUT_MS,
   )
   if (!response.ok) throw createWlsHttpError(label, response, await response.json().catch(() => undefined))
+  // 202 with the deployment progress object, which goes on once the edit session is activated.
+  return response.json().catch(() => null) as Promise<unknown>
 }
 
 export async function deployApplication(
@@ -260,14 +288,12 @@ export async function deployApplication(
     if (!input.file) throw new Error('Choose the archive to upload.')
     if (input.targets.length === 0) throw new Error('At least one target is required.')
     const file = input.file
-    return withEditSession(
+    const progress = await withEditSession(
       creds,
-      async () => {
-        await uploadApplication(creds, deploymentName, input.targets, file)
-        return configResult('deploy', deploymentName, input.targets)
-      },
+      () => uploadApplication(creds, deploymentName, input.targets, file),
       DEPLOYMENT_UPLOAD_TIMEOUT_MS,
     )
+    return settledDeployResult(creds, deploymentName, input.targets, progress)
   }
 
   const deploymentName = input.name.trim()
@@ -300,16 +326,7 @@ export async function deployApplication(
   )
 
   if (res.error) throw createWlsHttpError(`Deploy ${deploymentName}`, res.response, res.error)
-  const settled = await settleDeploymentProgress(res.data, (name) => fetchDeploymentProgressObject(creds, name))
-  const error = progressError(settled)
-  if (error) {
-    throw new WlsRestError({
-      kind: 'transport',
-      operation: `Deploy ${deploymentName}`,
-      message: redactSensitiveText(`Deploy ${deploymentName}: ${error}`),
-    })
-  }
-  return configResult('deploy', deploymentName, input.targets, progressState(settled))
+  return settledDeployResult(creds, deploymentName, input.targets, res.data)
 }
 
 export async function undeployApplication(

@@ -1,7 +1,8 @@
 // Main executable of WLS Cockpit.app. Notarization covers native code only, so a bundle whose
 // entry point is a script would still be blocked by Gatekeeper; this launcher replaces itself
-// with the bundled Node runtime running the Cockpit CLI on the portable port. If Cockpit already
-// listens there, the CLI opens the browser on it and exits.
+// with the bundled Node runtime running the Cockpit CLI on the portable port; it stops with Quit or
+// when its last browser tab closes. If Cockpit already listens there, the CLI opens the browser on
+// it and exits.
 #include <limits.h>
 #include <mach-o/dyld.h>
 #include <stdio.h>
@@ -28,7 +29,7 @@ int main(void) {
   snprintf(node, sizeof node, "%s/node", resolved);
   snprintf(cli, sizeof cli, "%s/../Resources/dist-server/wls-cockpit.mjs", resolved);
 
-  char *const args[] = {node, cli, "--port=8888", "--open", NULL};
+  char *const args[] = {node, cli, "--port=8888", "--open", "--exit-with-last-tab", NULL};
   execv(node, args);
   perror("WLS Cockpit: cannot start the bundled Node runtime");
   return 1;

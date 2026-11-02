@@ -122,8 +122,12 @@ function readHealth(value: unknown): { state: WlsHealthState; reason: string | n
   const raw = typeof value.state === 'string' ? value.state.toLowerCase() : ''
   const normalized = raw === 'warning' ? 'warn' : raw
   const state = WLS_HEALTH_STATES.includes(normalized as WlsHealthState) ? (normalized as WlsHealthState) : 'unknown'
+  // 12.2.1.4 and 14.1.2 report why in `symptoms` ({type, severity, info}); older payloads used
+  // a `reasons` string list.
+  const symptoms = Array.isArray(value.symptoms) ? value.symptoms.filter(isObject) : []
+  const symptom = symptoms.map((item) => readString(item.info) ?? readString(item.type)).find((text) => text !== null)
   const reasons = Array.isArray(value.reasons) ? value.reasons.filter((reason): reason is string => typeof reason === 'string') : []
-  return { state, reason: reasons[0] ?? null }
+  return { state, reason: symptom ?? reasons[0] ?? null }
 }
 
 function healthSeverity(state: WlsHealthState): MessagingSeverity {

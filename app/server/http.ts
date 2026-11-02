@@ -40,6 +40,8 @@ import {
 } from './jms-jmx-contract.ts'
 import { invokeJmsJmxHelper, jmsJmxErrorResponse } from './jms-jmx.ts'
 import { CredentialGuard, credentialKey, defaultCredentialGuard } from './credential-guard.ts'
+import { TabPresence, parseTabPresenceMessage } from './tab-presence.ts'
+import { TAB_PRESENCE_PATH } from '../src/api/tab-presence-contract.ts'
 import {
   CREDENTIALS_REJECTED_CODE,
   CREDENTIALS_REJECTED_HEADER,
@@ -99,6 +101,10 @@ export interface CockpitServerOptions {
   bindHost?: string
   // Tests pass their own; every request otherwise shares one guard, also under the Vite dev server.
   credentialGuard?: CredentialGuard
+  // Stop (through onShutdownRequest) when the last browser tab closes; set by the double-click
+  // launchers. See tab-presence.ts.
+  exitWithLastTab?: boolean
+  tabPresenceTiming?: { graceMs?: number; staleMs?: number }
 }
 
 function credentialGuardFor(options: CockpitServerOptions) {
@@ -119,6 +125,7 @@ function sendCredentialsRejected(req: IncomingMessage, res: ServerResponse) {
 
 export const COCKPIT_APP_ID = 'wls-cockpit'
 export const SHUTDOWN_PATH = '/__wls-cockpit/shutdown'
+export { TAB_PRESENCE_PATH }
 export const SHUTDOWN_HEADER = 'x-wls-cockpit-shutdown'
 export const SHUTDOWN_HEADER_VALUE = 'confirm'
 
@@ -148,7 +155,33 @@ function runtimeConfig(options: CockpitServerOptions) {
     actionAuditAvailable: options.auditStore?.enabled !== false,
     connectionProfileCatalogAvailable: options.connectionProfileStore?.enabled !== false,
     shutdownAvailable: typeof options.onShutdownRequest === 'function',
+    exitWithLastTab: exitsWithLastTab(options),
   }
+}
+
+function exitsWithLastTab(options: CockpitServerOptions) {
+  return options.exitWithLastTab === true && typeof options.onShutdownRequest === 'function'
+}
+
+// Tab open, heartbeat and close reports. Close arrives as a navigator.sendBeacon text body.
+async function handleTabPresenceRequest(req: IncomingMessage, res: ServerResponse, presence: TabPresence | null) {
+  if (req.method !== 'POST') {
+    sendJson(res, 405, { error: 'Tab presence requires POST.' })
+    return
+  }
+  if (!presence) {
+    req.resume()
+    sendJson(res, 404, { error: 'This Cockpit does not stop with its last tab.' })
+    return
+  }
+  const message = parseTabPresenceMessage((await requestBody(req, 1024)).toString('utf8'))
+  if (!message) {
+    sendJson(res, 400, { error: 'Invalid tab presence message.' })
+    return
+  }
+  presence.record(message.id, message.event)
+  res.statusCode = 204
+  res.end()
 }
 
 function runtimeScript(options: CockpitServerOptions) {
@@ -756,10 +789,17 @@ export function handleShutdownRequest(req: IncomingMessage, res: ServerResponse,
 }
 
 export function createCockpitServer(options: CockpitServerOptions): Server {
+  const presence = exitsWithLastTab(options)
+    ? new TabPresence({ onLastTabClosed: () => options.onShutdownRequest?.(), ...options.tabPresenceTiming })
+    : null
   return createServer((req, res) => {
     void (async () => {
       if (!isAllowedHost(req, options)) {
         sendJson(res, 403, { error: 'Cockpit only answers requests addressed to localhost or 127.0.0.1.' })
+        return
+      }
+      if (requestPath(req) === TAB_PRESENCE_PATH) {
+        await handleTabPresenceRequest(req, res, presence)
         return
       }
       if (req.url?.startsWith('/api/wls')) {

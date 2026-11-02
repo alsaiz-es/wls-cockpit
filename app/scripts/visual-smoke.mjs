@@ -206,9 +206,15 @@ const liveChecks = [
     forbidden: ['Coming soon', 'Request failed'],
   },
   {
+    name: 'server-debug-live',
+    path: '/servers/AdminServer?tab=debug',
+    expected: ['Debug flags of', 'ENABLED NOW', 'Authentication', 'Two-phase commit', 'SQL'],
+    forbidden: ['Coming soon', 'Request failed', 'Unable to load debug flags'],
+  },
+  {
     name: 'messaging-live',
     path: '/messaging',
-    expected: ['Stores & SAF', 'Persistent stores', 'SAF agents', 'Messaging bridges'],
+    expected: ['Stores & SAF', 'Persistent stores', 'SAF agents', 'Messaging bridges', '_WLS_AdminServer'],
     forbidden: ['Coming soon', 'Request failed'],
   },
   {

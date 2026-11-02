@@ -20,6 +20,11 @@ test('persistent stores carry health state, first reason and counters', () => {
   assert.equal(store?.readCount, null)
   assert.equal(store?.severity, 'warning')
   assert.deepEqual(normalizePersistentStores('server1', null), [])
+  const [fromSymptoms] = normalizePersistentStores('server1', {
+    items: [{ name: 'JDBCStore', healthState: { state: 'critical', symptoms: [{ type: 'STORE', severity: 'HIGH', info: 'Store failed to open' }] } }],
+  })
+  assert.equal(fromSymptoms?.healthReason, 'Store failed to open')
+  assert.equal(fromSymptoms?.severity, 'critical')
 })
 
 test('a SAF endpoint fails when its last failure is newer than its last connection', () => {

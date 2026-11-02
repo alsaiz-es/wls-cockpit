@@ -71,3 +71,12 @@ function withProgressNote(progress: unknown, note: string) {
   const messages = Array.isArray(existing) ? existing.filter((message) => typeof message === 'string') : []
   return { ...progress, messages: [...messages, note] }
 }
+
+// WebLogic completes the task but leaves the application inactive until a target restarts, for
+// example when a target server already has non-dynamic changes waiting for a restart.
+export function progressNeedsRestart(progress: unknown) {
+  if (!isObject(progress) || !Array.isArray(progress.deploymentMessages)) return false
+  return progress.deploymentMessages.some(
+    (message) => typeof message === 'string' && /Deployer:149169|requires server restart/i.test(message),
+  )
+}

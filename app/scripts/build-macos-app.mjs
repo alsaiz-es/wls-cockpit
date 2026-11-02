@@ -42,7 +42,8 @@ function infoPlist(version) {
     LSMinimumSystemVersion: MINIMUM_MACOS,
   }
   const lines = Object.entries(entries).map(([key, value]) => `  <key>${key}</key>\n  <string>${value}</string>`)
-  // No Dock icon: the app has no window of its own; it serves the browser UI and stops with Quit.
+  // No Dock icon: the app has no window of its own; it serves the browser UI and stops with Quit or
+  // with its last browser tab.
   lines.push('  <key>LSUIElement</key>\n  <true/>')
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',
@@ -105,8 +106,8 @@ export function buildMacosApp({ nodeRuntimeDir, outDir }) {
       '',
       'Drag "WLS Cockpit" to Applications, or open it from here. It starts a local server at',
       'http://127.0.0.1:8888 and opens it in the default browser; if Cockpit is already running there,',
-      'it just opens the browser. It has no window or Dock icon of its own: stop it with Quit in the',
-      'app header.',
+      'it just opens the browser. It has no window or Dock icon of its own: it stops when you close its',
+      'last browser tab, or with Quit in the app header.',
       '',
       'Profiles and the action audit are stored under ~/.wls-cockpit/. Passwords are never saved.',
       '',
