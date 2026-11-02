@@ -1,6 +1,6 @@
 import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, ChevronDown, ChevronRight, Clipboard, Loader2, Maximize2, Minimize2, Pause, Play, RefreshCw, Search, SkipForward } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   useLogDetailMetadata,
   useLogRecordTail,
@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/input'
 import { MonoText, PageHeader, StatusBadge, type StatusTone } from '@/components'
 import { cn } from '@/lib/utils'
 import { detailReturnPath } from './detail-return-state'
+import { logDaySeparator, logRecordTime } from './log-record-time'
 import { buildTopLevelLogDetailFailures } from './log-detail-failures'
 import { logRecordSeverityGroup, logRecordSeverityTone } from './log-record-severity'
 import { routeParam } from './route-params'
@@ -84,9 +85,8 @@ function httpStatusTone(value: number | null): StatusTone {
 type RecordSeverityFilter = 'all' | 'error' | 'warning' | 'info' | 'other'
 
 
-function formatRecordTimestamp(record: LogRecordPreviewRow) {
-  if (record.timestamp !== null) return formatTimestamp(record.timestamp)
-  return record.date ?? '-'
+function recordKey(record: LogRecordPreviewRow, index: number) {
+  return `${record.recordId ?? 'record'}-${record.timestamp ?? index}`
 }
 
 function recordMatchesText(record: LogRecordPreviewRow, term: string) {
@@ -217,6 +217,15 @@ function LogRecordTailPanel({
   const [severityFilter, setSeverityFilter] = useState<RecordSeverityFilter>('all')
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null)
   const [maximized, setMaximized] = useState(false)
+  // Messages show on one line; a click opens the full text (stack traces) in place.
+  const [expandedRecords, setExpandedRecords] = useState<ReadonlySet<string>>(() => new Set())
+  const toggleRecord = useCallback((key: string) => {
+    setExpandedRecords((current) => {
+      const next = new Set(current)
+      if (!next.delete(key)) next.add(key)
+      return next
+    })
+  }, [])
   const isHttpAccessArchive = selectedArchive?.kind === 'httpAccess' || isHttpAccessLogArchiveName(selectedArchiveName)
   const filteredRecords = useMemo(
     () =>
@@ -424,11 +433,18 @@ function LogRecordTailPanel({
               <tbody>
                 {filteredRecords.map((record, index) => {
                   const access = parseHttpAccessLogRecord(record)
+                  const daySeparator = logDaySeparator(filteredRecords, index)
                   return (
-                    <tr key={`${record.recordId ?? 'record'}-${record.timestamp ?? index}`} className="h-9 border-b border-border align-top">
+                    <Fragment key={`${record.recordId ?? 'record'}-${record.timestamp ?? index}`}>
+                    {daySeparator ? (
+                      <tr className="h-7 border-b border-border">
+                        <td colSpan={9} className="text-muted-foreground px-2 text-[11px] font-medium uppercase tracking-[0.05em]">{daySeparator}</td>
+                      </tr>
+                    ) : null}
+                    <tr className="h-9 border-b border-border align-top">
                       <td className="px-2 pt-2 text-right font-mono text-[13px]">{formatNumber(record.recordId)}</td>
-                      <td className="max-w-[190px] px-2 pt-2 text-[13px]">
-                        <MonoText title={formatRecordTimestamp(record)}>{formatRecordTimestamp(record)}</MonoText>
+                      <td className="whitespace-nowrap px-2 pt-2 text-[13px]">
+                        <MonoText title={logRecordTime(record).title}>{logRecordTime(record).text}</MonoText>
                       </td>
                       <td className="max-w-[90px] px-2 pt-2 text-[13px]">
                         <MonoText title={access?.method ?? '-'}>{access?.method ?? '-'}</MonoText>
@@ -465,6 +481,7 @@ function LogRecordTailPanel({
                         </div>
                       </td>
                     </tr>
+                    </Fragment>
                   )
                 })}
               </tbody>
@@ -484,11 +501,19 @@ function LogRecordTailPanel({
                 </tr>
               </thead>
               <tbody>
-                {filteredRecords.map((record, index) => (
-                  <tr key={`${record.recordId ?? 'record'}-${record.timestamp ?? index}`} className="h-9 border-b border-border align-top">
+                {filteredRecords.map((record, index) => {
+                  const daySeparator = logDaySeparator(filteredRecords, index)
+                  return (
+                  <Fragment key={`${record.recordId ?? 'record'}-${record.timestamp ?? index}`}>
+                  {daySeparator ? (
+                    <tr className="h-7 border-b border-border">
+                      <td colSpan={8} className="text-muted-foreground px-2 text-[11px] font-medium uppercase tracking-[0.05em]">{daySeparator}</td>
+                    </tr>
+                  ) : null}
+                  <tr className="h-9 border-b border-border align-top">
                     <td className="px-2 pt-2 text-right font-mono text-[13px]">{formatNumber(record.recordId)}</td>
-                    <td className="max-w-[190px] px-2 pt-2 text-[13px]">
-                      <MonoText title={formatRecordTimestamp(record)}>{formatRecordTimestamp(record)}</MonoText>
+                    <td className="whitespace-nowrap px-2 pt-2 text-[13px]">
+                      <MonoText title={logRecordTime(record).title}>{logRecordTime(record).text}</MonoText>
                     </td>
                     <td className="px-2 pt-2 text-[13px]">
                       <StatusBadge kind="custom" tone={logRecordSeverityTone(record.severity)} label={record.severity ?? 'UNKNOWN'} />
@@ -499,27 +524,46 @@ function LogRecordTailPanel({
                     <td className="max-w-[130px] truncate px-2 pt-2 text-[13px]">
                       <MonoText title={record.messageId ?? '-'}>{record.messageId ?? '-'}</MonoText>
                     </td>
-                    <td className="max-w-[260px] truncate px-2 pt-2 text-[13px]">
+                    <td className="max-w-[200px] truncate whitespace-nowrap px-2 pt-2 text-[13px]">
                       <MonoText title={record.thread ?? '-'}>{record.thread ?? '-'}</MonoText>
                     </td>
                     <td className="max-w-[140px] truncate px-2 pt-2 text-[13px]">
                       <MonoText title={record.userId ?? '-'}>{record.userId ?? '-'}</MonoText>
                     </td>
-                    <td className={cn('px-2 py-2 text-[13px] leading-[18px]', maximized ? 'min-w-[560px]' : 'min-w-[320px]')}>
+                    <td className={cn('w-full max-w-0 px-2 py-1.5 text-[13px] leading-[18px]', maximized ? 'min-w-[560px]' : 'min-w-[320px]')}>
                       <div className="flex items-start justify-between gap-2">
-                        <MonoText className="whitespace-pre-wrap break-words" title={record.message ?? '-'}>
+                        <MonoText
+                          as="button"
+                          type="button"
+                          className={cn(
+                            'min-w-0 cursor-pointer pt-0.5 text-left hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                            expandedRecords.has(recordKey(record, index)) ? 'whitespace-pre-wrap break-words' : 'truncate',
+                          )}
+                          title={expandedRecords.has(recordKey(record, index)) ? 'Collapse message' : record.message ?? '-'}
+                          aria-expanded={expandedRecords.has(recordKey(record, index))}
+                          onClick={() => toggleRecord(recordKey(record, index))}
+                        >
                           {record.message ?? '-'}
                         </MonoText>
                         {record.message ? (
-                          <Button type="button" variant="ghost" size="sm" onClick={() => copyRecordMessage(record)}>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="size-6 shrink-0 p-0"
+                            title="Copy message"
+                            aria-label="Copy message"
+                            onClick={() => copyRecordMessage(record)}
+                          >
                             <Clipboard className="size-3.5" strokeWidth={1.5} />
-                            Copy
                           </Button>
                         ) : null}
                       </div>
                     </td>
                   </tr>
-                ))}
+                  </Fragment>
+                  )
+                })}
               </tbody>
             </table>
           )}

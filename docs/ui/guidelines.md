@@ -549,7 +549,9 @@ requests failed):
 
 - Default display: relative (`3m ago`, `12h ago`, `Apr 28`).
 - Hover tooltip: full ISO-8601 in local time + UTC offset.
-- Inside log views: absolute local time `HH:MM:SS.mmm`.
+- Inside log views: absolute local time `HH:MM:SS.mmm`, full date in the
+  tooltip, and a muted separator row wherever the day changes. Each record
+  stays on one line: the message truncates and a click expands it in place.
 
 ### Identifiers
 

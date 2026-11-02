@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { Clipboard, Pause, Play, RefreshCw, Search, Trash2 } from 'lucide-react'
 import {
@@ -38,6 +38,7 @@ import {
 import { detailReturnState } from './detail-return-state'
 import { readLogsTailSelection, writeLogsTailSelection } from './logs-tail-selection'
 import { logRecordSeverityTone } from './log-record-severity'
+import { logDaySeparator, logRecordTime } from './log-record-time'
 
 const DEFAULT_SORT: DataTableSort = { columnId: 'severity', direction: 'asc' }
 const severityOrder: LogSignalSeverity[] = ['critical', 'warning', 'unknown', 'healthy']
@@ -124,11 +125,6 @@ function formatNumber(value: number | null) {
 
 function formatBytes(value: number | null) {
   return value === null ? '-' : value.toLocaleString()
-}
-
-function formatRecordTimestamp(record: MultiLogTailRecord) {
-  if (record.timestamp !== null) return new Date(record.timestamp).toLocaleString()
-  return record.date ?? '-'
 }
 
 function availabilityTone(available: boolean): StatusTone {
@@ -515,9 +511,15 @@ function MultiServerLogTail({
                 const access = isHttpAccessRecord
                   ? parseHttpAccessLogRecord(record)
                   : null
+                const daySeparator = logDaySeparator(visibleRecords, index)
                 return (
+                  <Fragment key={`${record.sourceId}-${record.recordId ?? record.timestamp ?? index}`}>
+                  {daySeparator ? (
+                    <tr className="h-7 border-b border-border">
+                      <td colSpan={6} className="text-muted-foreground px-2 text-[11px] font-medium uppercase tracking-[0.05em]">{daySeparator}</td>
+                    </tr>
+                  ) : null}
                   <tr
-                    key={`${record.sourceId}-${record.recordId ?? record.timestamp ?? index}`}
                     className={`h-9 border-b border-l-4 border-border align-top ${sourceAccentClasses[sourceNumber % sourceAccentClasses.length]}`}
                   >
                     <td className="max-w-[240px] px-2 py-2 text-[13px]">
@@ -529,8 +531,8 @@ function MultiServerLogTail({
                       </span>
                     </td>
                     <td className="px-2 py-2 text-right font-mono text-[13px]">{formatNumber(record.recordId)}</td>
-                    <td className="max-w-[180px] px-2 py-2 text-[13px]">
-                      <MonoText title={formatRecordTimestamp(record)}>{formatRecordTimestamp(record)}</MonoText>
+                    <td className="whitespace-nowrap px-2 py-2 text-[13px]">
+                      <MonoText title={logRecordTime(record).title}>{logRecordTime(record).text}</MonoText>
                     </td>
                     <td className="px-2 py-2 text-[13px]">
                       {isHttpAccessRecord ? (
@@ -577,6 +579,7 @@ function MultiServerLogTail({
                       </div>
                     </td>
                   </tr>
+                  </Fragment>
                 )
               })}
             </tbody>
