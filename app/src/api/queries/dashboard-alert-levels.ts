@@ -1,9 +1,13 @@
 import {
+  collectAlertSignals,
   formatAlertDuration,
+  mergeAlertSignals,
   isAlertIgnored,
   sustainedAlertLevel,
   worseAlertLevel,
+  worstAlertSignal,
   type AlertLevel,
+  type AlertSignals,
   type AlertSustainTracker,
   type ResolvedAlertRules,
 } from '../alert-rules.ts'
@@ -14,13 +18,15 @@ import {
   capJdbcUtilizationLevel,
   jdbcStateLevel,
   jdbcUtilizationPercent,
+  type DashboardJdbcSignal,
   type JdbcPoolRuntime,
 } from './dashboard-jdbc-normalization.ts'
 import {
+  jmsAlertSignals,
   jmsBacklog,
   jmsNoConsumerMessages,
-  jmsStateLevel,
   type DashboardJmsClassifiable,
+  type JmsAlertSignal,
 } from './dashboard-jms-classification.ts'
 
 // The dashboard judges thresholded signals over time (see alert-rules.ts): a pool, destination or
@@ -34,33 +40,53 @@ export interface DashboardAlertContext {
   now: number
 }
 
-export function sustainedJdbcSeverity(pool: JdbcPoolRuntime, context: DashboardAlertContext): JdbcPoolRuntime['severity'] {
+// Which figures hold the pool at its level, judged over time; leaks only show up here, because a
+// single reading cannot tell a new leak from an old one.
+export function sustainedJdbcSignals(pool: JdbcPoolRuntime, context: DashboardAlertContext): AlertSignals<DashboardJdbcSignal> {
   const { rules, tracker, now } = context
   const key = `${pool.serverName}\u0000${pool.name}`
-  const level = worseAlertLevel(
-    jdbcStateLevel(pool),
-    sustainedAlertLevel(tracker, `jdbc.waiting\u0000${key}`, rules.rules['jdbc.waiting'], pool.waitingForConnectionCurrentCount, now),
-    capJdbcUtilizationLevel(
-      sustainedAlertLevel(tracker, `jdbc.utilization\u0000${key}`, rules.rules['jdbc.utilization'], jdbcUtilizationPercent(pool), now),
-      pool,
-    ),
-    tracker?.increaseLevel(`jdbc.leaked\u0000${key}`, rules.rules['jdbc.leaked'], pool.leakedConnectionCount, now),
-  )
-  return level ?? 'healthy'
+  return collectAlertSignals<DashboardJdbcSignal>([
+    [['state'], jdbcStateLevel(pool)],
+    [['waiting'], sustainedAlertLevel(tracker, `jdbc.waiting\u0000${key}`, rules.rules['jdbc.waiting'], pool.waitingForConnectionCurrentCount, now)],
+    [
+      ['utilization'],
+      capJdbcUtilizationLevel(
+        sustainedAlertLevel(tracker, `jdbc.utilization\u0000${key}`, rules.rules['jdbc.utilization'], jdbcUtilizationPercent(pool), now),
+        pool,
+      ),
+    ],
+    [['leaks'], tracker?.increaseLevel(`jdbc.leaked\u0000${key}`, rules.rules['jdbc.leaked'], pool.leakedConnectionCount, now)],
+  ])
+}
+
+export function sustainedJdbcSeverity(pool: JdbcPoolRuntime, context: DashboardAlertContext): JdbcPoolRuntime['severity'] {
+  return worstAlertSignal(sustainedJdbcSignals(pool, context)) ?? 'healthy'
+}
+
+export function sustainedJmsSignals(
+  item: DashboardJmsClassifiable & { serverName: string; jmsServerName: string },
+  context: DashboardAlertContext,
+): AlertSignals<JmsAlertSignal> {
+  const { rules, tracker, now } = context
+  const key = `${item.serverName}\u0000${item.jmsServerName}\u0000${item.destinationName ?? ''}`
+  // Pause and failure states are immediate; the thresholded counts are judged over time.
+  const immediate = jmsAlertSignals(item, {
+    ...rules,
+    rules: { ...rules.rules, 'jms.noConsumers': { ...rules.rules['jms.noConsumers'], enabled: false }, 'jms.backlog': { ...rules.rules['jms.backlog'], enabled: false } },
+  })
+  const pending = (item.messagesPendingCount ?? 0) > 0 ? ['pending' as const] : []
+  const sustained = collectAlertSignals<JmsAlertSignal>([
+    [['messages', 'consumers'], sustainedAlertLevel(tracker, `jms.noConsumers\u0000${key}`, rules.rules['jms.noConsumers'], jmsNoConsumerMessages(item), now)],
+    [['messages', ...pending], sustainedAlertLevel(tracker, `jms.backlog\u0000${key}`, rules.rules['jms.backlog'], jmsBacklog(item), now)],
+  ])
+  return mergeAlertSignals(immediate, sustained)
 }
 
 export function sustainedJmsSeverity(
   item: DashboardJmsClassifiable & { serverName: string; jmsServerName: string },
   context: DashboardAlertContext,
 ): 'healthy' | AlertLevel {
-  const { rules, tracker, now } = context
-  const key = `${item.serverName}\u0000${item.jmsServerName}\u0000${item.destinationName ?? ''}`
-  const level = worseAlertLevel(
-    jmsStateLevel(item),
-    sustainedAlertLevel(tracker, `jms.noConsumers\u0000${key}`, rules.rules['jms.noConsumers'], jmsNoConsumerMessages(item), now),
-    sustainedAlertLevel(tracker, `jms.backlog\u0000${key}`, rules.rules['jms.backlog'], jmsBacklog(item), now),
-  )
-  return level ?? 'healthy'
+  return worstAlertSignal(sustainedJmsSignals(item, context)) ?? 'healthy'
 }
 
 export interface DashboardPressureServer {
@@ -85,6 +111,11 @@ export interface ServerAlertLevels {
   hogging: AlertLevel | null
   stuck: AlertLevel | null
   heap: AlertLevel | null
+}
+
+// The worst of a server's thread signals, for views that show threads as one figure.
+export function threadAlertLevel(levels: ServerAlertLevels | null | undefined): AlertLevel | null {
+  return levels ? worseAlertLevel(levels.pending, levels.hogging, levels.stuck) : null
 }
 
 export function evaluateServerPressure(

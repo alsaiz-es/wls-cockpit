@@ -3,6 +3,7 @@ import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { Loader2, Plus, Search } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { type WlsCredentials } from '@/api/client'
+import { threadAlertLevel } from '@/api/queries/dashboard-alert-levels'
 import { useServerAlertLevels } from '@/api/queries/domain-dashboard'
 import { readOnlyDemoModeEnabled } from '@/api/runtime-config'
 import {
@@ -889,6 +890,7 @@ export function Servers() {
                 {formatCount(row.threads?.total ?? null)}
               </MonoText>
             }
+            alertLevel={threadAlertLevel(serverAlerts[row.name])}
             title={`Pending: ${row.threads?.pending ?? '-'} · Hogging: ${row.threads?.hogging ?? '-'} · Stuck: ${row.threads?.stuck ?? '-'}`}
           />
         ),

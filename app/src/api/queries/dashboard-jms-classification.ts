@@ -1,8 +1,10 @@
 import {
   alertRuleLevel,
+  collectAlertSignals,
   getActiveAlertRules,
-  worseAlertLevel,
+  worstAlertSignal,
   type AlertLevel,
+  type AlertSignals,
   type ResolvedAlertRules,
 } from '../alert-rules.ts'
 
@@ -62,14 +64,27 @@ export function jmsNoConsumerMessages(item: DashboardJmsClassifiable) {
   return item.destinationName && item.consumersCurrentCount === 0 ? item.messagesCurrentCount : null
 }
 
+export type JmsAlertSignal = 'state' | 'pause' | 'messages' | 'pending' | 'consumers'
+
+export function jmsAlertSignals(
+  item: DashboardJmsClassifiable,
+  rules: ResolvedAlertRules = getActiveAlertRules(),
+): AlertSignals<JmsAlertSignal> {
+  const hasMessages = (item.messagesCurrentCount ?? 0) > 0 || (item.messagesPendingCount ?? 0) > 0
+  const paused = hasDashboardJmsPauseSignal(item)
+  const pending = (item.messagesPendingCount ?? 0) > 0 ? ['pending' as const] : []
+  return collectAlertSignals<JmsAlertSignal>([
+    [['state'], hasDashboardJmsFailureSignal(item) ? 'critical' : null],
+    [['pause'], paused ? (hasMessages ? 'critical' : 'warning') : null],
+    [['messages', ...pending], paused && hasMessages ? 'critical' : null],
+    [['messages', 'consumers'], alertRuleLevel(rules.rules['jms.noConsumers'], jmsNoConsumerMessages(item))],
+    [['messages', ...pending], alertRuleLevel(rules.rules['jms.backlog'], jmsBacklog(item))],
+  ])
+}
+
 export function classifyDashboardJms(
   item: DashboardJmsClassifiable,
   rules: ResolvedAlertRules = getActiveAlertRules(),
 ): DashboardJmsSeverity {
-  const level = worseAlertLevel(
-    jmsStateLevel(item),
-    alertRuleLevel(rules.rules['jms.noConsumers'], jmsNoConsumerMessages(item)),
-    alertRuleLevel(rules.rules['jms.backlog'], jmsBacklog(item)),
-  )
-  return level ?? 'healthy'
+  return worstAlertSignal(jmsAlertSignals(item, rules)) ?? 'healthy'
 }

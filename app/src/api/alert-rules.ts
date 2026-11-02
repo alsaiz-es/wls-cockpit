@@ -390,6 +390,41 @@ export function worseAlertLevel(...levels: Array<AlertLevel | null | undefined>)
   return null
 }
 
+// Which figures make a resource warning or critical, so pages can colour those and only those.
+// The row's own severity caps them: the dashboard judges levels over time, and a figure never
+// looks worse than the resource it belongs to.
+export type AlertSignals<K extends string> = Partial<Record<K, AlertLevel>>
+
+export function worstAlertSignal<K extends string>(signals: AlertSignals<K>): AlertLevel | null {
+  return worseAlertLevel(...Object.values<AlertLevel | undefined>(signals))
+}
+
+export function signalsWithinSeverity<K extends string>(signals: AlertSignals<K>, severity: string | null | undefined): AlertSignals<K> {
+  if (severity !== 'warning' && severity !== 'critical') return {}
+  return Object.fromEntries(
+    Object.entries<AlertLevel | undefined>(signals).flatMap(([key, level]) =>
+      level ? [[key, severity === 'warning' ? 'warning' : level]] : [],
+    ),
+  ) as AlertSignals<K>
+}
+
+function addSignal<K extends string>(signals: AlertSignals<K>, key: K, level: AlertLevel | null | undefined) {
+  const worse = worseAlertLevel(signals[key], level)
+  if (worse) signals[key] = worse
+}
+
+export function collectAlertSignals<K extends string>(entries: Array<[K[], AlertLevel | null | undefined]>): AlertSignals<K> {
+  const signals: AlertSignals<K> = {}
+  for (const [keys, level] of entries) for (const key of keys) addSignal(signals, key, level)
+  return signals
+}
+
+export function mergeAlertSignals<K extends string>(...sets: Array<AlertSignals<K>>): AlertSignals<K> {
+  const signals: AlertSignals<K> = {}
+  for (const set of sets) for (const [key, level] of Object.entries<AlertLevel | undefined>(set)) addSignal(signals, key as K, level)
+  return signals
+}
+
 // A gap this long between two readings (a hidden tab stops polling) restarts the duration: the
 // condition was not observed in between.
 export const ALERT_SUSTAIN_MAX_GAP_MS = 60_000

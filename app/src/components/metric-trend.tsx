@@ -1,6 +1,8 @@
 import { Minus, TrendingDown, TrendingUp } from 'lucide-react'
 import { type ReactNode } from 'react'
+import type { AlertLevel } from '@/api/alert-rules'
 import { cn } from '@/lib/utils'
+import { alertTextClass } from './alert-tone'
 import type { MetricHistorySample, MetricHistorySeries, MetricTrendDirection } from '@/api/queries/metric-history'
 
 export interface MetricTrendProps {
@@ -8,6 +10,8 @@ export interface MetricTrendProps {
   value: ReactNode
   title?: string
   higherIsWorse?: boolean
+  // Colours the value when this figure makes its resource warning or critical (§9.5).
+  alertLevel?: AlertLevel | null
   className?: string
 }
 
@@ -108,6 +112,7 @@ export function MetricTrend({
   value,
   title,
   higherIsWorse = true,
+  alertLevel,
   className,
 }: MetricTrendProps) {
   const direction = series.samples.length < 2 ? 'unknown' : series.direction
@@ -118,7 +123,7 @@ export function MetricTrend({
       className={cn('inline-flex min-w-[112px] items-center justify-end gap-1.5 tabular-nums', className)}
       title={trendTitle(series, title)}
     >
-      <span className="font-mono">{value}</span>
+      <span className={cn('font-mono', alertTextClass(alertLevel))}>{value}</span>
       {series.samples.length >= 2 ? <MetricSparkline samples={series.samples} /> : null}
       <span className={cn('inline-flex w-3 justify-center', tone)}>
         <TrendIcon direction={direction} />

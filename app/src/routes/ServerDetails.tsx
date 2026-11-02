@@ -3,6 +3,7 @@ import { ArrowLeft, Clipboard, Download, FileText, Loader2, Pencil, Plus, RadioT
 import { useCallback, useMemo, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { type WlsCredentials } from '@/api/client'
+import { threadAlertLevel } from '@/api/queries/dashboard-alert-levels'
 import { useServerAlertLevels } from '@/api/queries/domain-dashboard'
 import { readOnlyDemoModeEnabled } from '@/api/runtime-config'
 import { ServerDebugTab } from './server-debug-tab'
@@ -60,7 +61,7 @@ import {
 import { useAuth } from '@/auth/useAuth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { ConfirmDialog, HeapBar, KeyValueGrid, MonoText, PageHeader, RelativeTime, RestartRequiredBadge, StatusBadge } from '@/components'
+import { ConfirmDialog, HeapBar, KeyValueGrid, MetricTile, MonoText, PageHeader, RelativeTime, RestartRequiredBadge, StatusBadge } from '@/components'
 import { detailReturnPath } from './detail-return-state'
 import type { ServerMetricCaptureFixtureName } from './server-metrics-fixtures'
 import { ServerMetricsTab } from './server-metrics-tab'
@@ -1060,25 +1061,6 @@ function HeapDumpUnsupportedSection({ support }: { support: ServerHeapDumpUnsupp
   )
 }
 
-function Metric({
-  label,
-  value,
-  detail,
-}: {
-  label: string
-  value: string
-  detail?: string
-}) {
-  return (
-    <div className="border-border bg-surface-1 min-h-[72px] border px-3 py-2">
-      <div className="text-muted-foreground text-[11px] uppercase leading-[14px] tracking-[0.04em]">{label}</div>
-      <MonoText className="mt-2 block truncate text-[18px] leading-6" title={value}>
-        {value}
-      </MonoText>
-      {detail ? <div className="text-muted-foreground mt-1 truncate text-xs">{detail}</div> : null}
-    </div>
-  )
-}
 
 function ServerDetailTabs({
   activeTab,
@@ -1852,11 +1834,12 @@ export function ServerDetails() {
                 <StatusBadge kind="wls-health" value={row.healthState} />
               </div>
             </div>
-            <Metric label="Listen" value={formatListen(row, defaultHost)} />
-            <Metric
+            <MetricTile label="Listen" value={formatListen(row, defaultHost)} />
+            <MetricTile
               label="Threads"
               value={row.threads ? row.threads.total.toLocaleString() : '-'}
               detail={`Pending ${row.threads?.pending ?? '-'} · Hogging ${row.threads?.hogging ?? '-'} · Stuck ${row.threads?.stuck ?? '-'}`}
+              alertLevel={threadAlertLevel(serverAlerts[row.name])}
             />
           </div>
 

@@ -13,7 +13,7 @@ import {
   type JdbcPoolRuntime as NormalizedJdbcPoolRuntime,
 } from './dashboard-jdbc-normalization.ts'
 import { hasJmsPauseSignal, shouldFetchJmsDestinations } from './dashboard-jms-gating.ts'
-import { classifyDashboardJms } from './dashboard-jms-classification.ts'
+import { classifyDashboardJms, type JmsAlertSignal } from './dashboard-jms-classification.ts'
 import { buildObservedServerDownIssues, buildRestartRequiredIssues } from './dashboard-observed-servers.ts'
 import {
   collectDashboardFamilyFanout,
@@ -25,12 +25,12 @@ import {
 } from './dashboard-family-fanout.ts'
 import { applicationHealthDetail, firstHealthReason } from './deployment-health-symptoms.ts'
 import { heapUtilization } from './heap-utilization.ts'
-import { AlertSustainTracker, getActiveAlertRules } from '../alert-rules.ts'
+import { AlertSustainTracker, getActiveAlertRules, worstAlertSignal, type AlertSignals } from '../alert-rules.ts'
 import {
   evaluateServerPressure,
   isDashboardIssueIgnored,
-  sustainedJdbcSeverity,
-  sustainedJmsSeverity,
+  sustainedJdbcSignals,
+  sustainedJmsSignals,
   type DashboardAlertContext,
   type ServerAlertLevels,
 } from './dashboard-alert-levels.ts'
@@ -97,6 +97,8 @@ export interface JmsRuntimeSummary {
   productionPausedState: string | null
   insertionPausedState: string | null
   severity: DashboardSeverity
+  // Set by the dashboard: the figures that hold the destination at its level, judged over time.
+  alertSignals?: AlertSignals<JmsAlertSignal>
 }
 
 export interface ServerRollup {
@@ -820,8 +822,20 @@ export async function fetchDomainDashboardSnapshot(
   ])
 
   const context: DashboardAlertContext = { rules: getActiveAlertRules(), tracker: options.tracker ?? null, now: Date.now() }
-  const jdbc = { ...rawJdbc, items: rawJdbc.items.map((pool) => ({ ...pool, severity: sustainedJdbcSeverity(pool, context) })) }
-  const jms = { ...rawJms, items: rawJms.items.map((item) => ({ ...item, severity: sustainedJmsSeverity(item, context) })) }
+  const jdbc = {
+    ...rawJdbc,
+    items: rawJdbc.items.map((pool): JdbcPoolRuntime => {
+      const alertSignals = sustainedJdbcSignals(pool, context)
+      return { ...pool, alertSignals, severity: worstAlertSignal(alertSignals) ?? 'healthy' }
+    }),
+  }
+  const jms = {
+    ...rawJms,
+    items: rawJms.items.map((item): JmsRuntimeSummary => {
+      const alertSignals = sustainedJmsSignals(item, context)
+      return { ...item, alertSignals, severity: worstAlertSignal(alertSignals) ?? 'healthy' }
+    }),
+  }
   const pressure = evaluateServerPressure(servers, context)
   const issues = buildDashboardIssues(servers, jdbc, jms, applications, logs, context, pressure.issues)
   context.tracker?.prune(context.now)

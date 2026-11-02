@@ -1,4 +1,6 @@
 import { Link, useLocation, useParams } from 'react-router-dom'
+import { signalsWithinSeverity } from '@/api/alert-rules'
+import { jdbcAlertSignals } from '@/api/queries/dashboard-jdbc-normalization'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { useCallback, useMemo } from 'react'
 import { readOnlyDemoModeEnabled } from '@/api/runtime-config'
@@ -9,7 +11,7 @@ import {
 } from '@/api/queries/data-sources'
 import { deploymentTargetLabel } from '@/api/queries/deployment-targets'
 import { Button } from '@/components/ui/button'
-import { KeyValueGrid, MonoText, PageHeader, StatusBadge, type StatusTone } from '@/components'
+import { KeyValueGrid, MetricTile, MonoText, PageHeader, StatusBadge, type StatusTone } from '@/components'
 import { detailReturnPath } from './detail-return-state'
 import { demoSensitiveValue } from './demo-readonly-values'
 import { routeParam } from './route-params'
@@ -49,25 +51,6 @@ function listSummary(values: string[]) {
   return values.length ? values.join(', ') : '–'
 }
 
-function Metric({
-  label,
-  value,
-  detail,
-}: {
-  label: string
-  value: string
-  detail?: string
-}) {
-  return (
-    <div className="border-border bg-surface-1 min-h-[72px] border px-3 py-2">
-      <div className="text-muted-foreground text-[11px] uppercase leading-[14px] tracking-[0.04em]">{label}</div>
-      <MonoText className="mt-2 block truncate text-[18px] leading-6" title={value}>
-        {value}
-      </MonoText>
-      {detail ? <div className="text-muted-foreground mt-1 truncate text-xs">{detail}</div> : null}
-    </div>
-  )
-}
 
 function UtilizationPanel({ row }: { row: DataSourceRuntimeRow }) {
   const percent = row.utilization === null ? null : Math.round(row.utilization * 100)
@@ -77,14 +60,16 @@ function UtilizationPanel({ row }: { row: DataSourceRuntimeRow }) {
       : row.utilizationCapacitySource === 'runtimeCurrent'
         ? 'created capacity fallback'
         : 'capacity unavailable'
+  // Coloured by pool usage only, not by the pool's overall status (§9.5).
+  const usage = signalsWithinSeverity(jdbcAlertSignals(row), row.severity).utilization
   const tone =
-    row.severity === 'critical'
-      ? 'bg-status-negative'
-      : row.severity === 'warning'
-        ? 'bg-status-warning'
-        : row.severity === 'healthy'
-          ? 'bg-status-positive'
-          : 'bg-status-unknown'
+    row.severity === 'unknown'
+      ? 'bg-status-unknown'
+      : usage === 'critical'
+        ? 'bg-status-negative'
+        : usage === 'warning'
+          ? 'bg-status-warning'
+          : 'bg-status-positive'
 
   return (
     <section className="border-border bg-surface-1 border px-3 py-3">
@@ -158,6 +143,7 @@ export function DataSourceDetails() {
   const failures = query.data?.partialFailures ?? []
   const returnPath = useMemo(() => detailReturnPath(location.state, '/data-sources'), [location.state])
   const row = query.data?.row ?? null
+  const signals = row ? signalsWithinSeverity(jdbcAlertSignals(row), row.severity) : {}
   const refetchAll = useCallback(() => void query.refetch(), [query])
 
   return (
@@ -229,18 +215,18 @@ export function DataSourceDetails() {
                 <StatusBadge kind="custom" tone={severityTone(row.severity)} label={row.state} />
               </div>
             </div>
-            <Metric label="Server" value={row.serverName} />
-            <Metric label="Deploy" value={formatDeploymentState(row.deploymentState)} />
+            <MetricTile label="Server" value={row.serverName} />
+            <MetricTile label="Deploy" value={formatDeploymentState(row.deploymentState)} />
           </div>
 
           <UtilizationPanel row={row} />
 
           <div className="grid gap-3 md:grid-cols-4">
-            <Metric label="Active" value={formatNumber(row.activeConnectionsCurrentCount)} />
-            <Metric label="Max capacity" value={formatNumber(row.utilizationCapacity)} />
-            <Metric label="Created" value={formatNumber(row.currCapacity)} />
-            <Metric label="Waiting" value={formatNumber(row.waitingForConnectionCurrentCount)} />
-            <Metric label="Leaks" value={formatNumber(row.leakedConnectionCount)} />
+            <MetricTile label="Active" value={formatNumber(row.activeConnectionsCurrentCount)} alertLevel={signals.utilization} />
+            <MetricTile label="Max capacity" value={formatNumber(row.utilizationCapacity)} alertLevel={signals.utilization} />
+            <MetricTile label="Created" value={formatNumber(row.currCapacity)} />
+            <MetricTile label="Waiting" value={formatNumber(row.waitingForConnectionCurrentCount)} alertLevel={signals.waiting} />
+            <MetricTile label="Leaks" value={formatNumber(row.leakedConnectionCount)} />
           </div>
 
           <section className="border-border bg-surface-1 border px-3 py-3">

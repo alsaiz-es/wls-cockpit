@@ -1,4 +1,6 @@
 import { useCallback, useMemo } from 'react'
+import { signalsWithinSeverity } from '@/api/alert-rules'
+import { jmsAlertSignals } from '@/api/queries/dashboard-jms-classification'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { Search } from 'lucide-react'
 import {
@@ -34,6 +36,11 @@ import { jmsServerInventory } from './jms-server-inventory'
 import { cn } from '@/lib/utils'
 
 const DEFAULT_SORT: DataTableSort = { columnId: 'severity', direction: 'asc' }
+// The figures behind a row's warning or critical status take its colour (§9.5).
+function rowSignals(row: Parameters<typeof jmsAlertSignals>[0] & { severity: string }) {
+  return signalsWithinSeverity(jmsAlertSignals(row), row.severity)
+}
+
 const severityOrder: JmsSeverity[] = ['critical', 'warning', 'unknown', 'healthy']
 const severityFilters = ['all', ...severityOrder] as const
 const backlogFilters = ['all', 'backlog', 'pending', 'zeroConsumers', 'stalled'] as const
@@ -320,6 +327,7 @@ export function Jms() {
               'messages.current',
             )}
             value={formatNumber(row.messagesCurrentCount)}
+            alertLevel={rowSignals(row).messages}
             title={`${row.destinationName ?? row.jmsServerName} current messages`}
           />
         ),
@@ -339,6 +347,7 @@ export function Jms() {
               'messages.pending',
             )}
             value={formatNumber(row.messagesPendingCount)}
+            alertLevel={rowSignals(row).pending}
             title={`${row.destinationName ?? row.jmsServerName} pending messages`}
           />
         ),
@@ -358,6 +367,7 @@ export function Jms() {
               'consumers.current',
             )}
             value={formatNumber(row.consumersCurrentCount)}
+            alertLevel={rowSignals(row).consumers}
             title={`${row.destinationName ?? row.jmsServerName} consumers`}
             higherIsWorse={false}
           />

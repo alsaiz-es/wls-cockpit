@@ -5,9 +5,12 @@ import { ArrowLeft, ChevronLeft, ChevronRight, Clipboard, Eye, Loader2, Pause, P
 import { JMS_BROWSE_MAX_SELECTOR_LENGTH } from '@/api/queries/jms-normalization'
 import { deleteJmsMessages, fetchJmsMessageDetail, formatJmsMessageDeleteFeedback, formatJmsMessageProduceFeedback, jmsDestinationDetailQueryKey, jmsDestinationPauseOperationAvailable, jmsPausedStateLabel, jmsPausedValue, jmsPauseDimensionLabel, normalizeJmsBrowseUrlState, pauseJmsDestination, produceJmsMessage, serializeJmsBrowseUrlState, useJmsDestinationDetail, useJmsMessageBrowse, type JmsBrowsedMessageRow, type JmsDestinationRow, type JmsMessageDetailRow, type JmsMessageProduceRequest, type JmsPauseAction, type JmsPauseDimension, type JmsSeverity, type JmsTaskSummary } from '@/api/queries/jms'
 import { readOnlyDemoModeEnabled, readRuntimeConfig } from '@/api/runtime-config'
+import { signalsWithinSeverity } from '@/api/alert-rules'
+import { jmsAlertSignals } from '@/api/queries/dashboard-jms-classification'
 import { useAuth } from '@/auth/useAuth'
 import {
   ConfirmDialog,
+  MetricTile,
   MonoText,
   PageHeader,
   StatusBadge,
@@ -79,25 +82,6 @@ function pauseTone(value: boolean | null): StatusTone {
   return 'unknown'
 }
 
-function Metric({
-  label,
-  value,
-  detail,
-}: {
-  label: string
-  value: string
-  detail?: string
-}) {
-  return (
-    <div className="border-border bg-surface-1 min-h-[72px] border px-3 py-2">
-      <div className="text-muted-foreground text-[11px] uppercase leading-[14px] tracking-[0.04em]">{label}</div>
-      <MonoText className="mt-2 block truncate text-[18px] leading-6" title={value}>
-        {value}
-      </MonoText>
-      {detail ? <div className="text-muted-foreground mt-1 truncate text-xs">{detail}</div> : null}
-    </div>
-  )
-}
 
 function PartialBanner({
   failures,
@@ -344,10 +328,10 @@ function MessageDetailPanel({
       ) : row ? (
         <div className="space-y-3 px-3 py-3">
           <div className="grid gap-2 md:grid-cols-4">
-            <Metric label="Delivery" value={row.deliveryMode ?? '-'} />
-            <Metric label="Type" value={row.type ?? '-'} />
-            <Metric label="Redelivered" value={formatBoolean(row.redelivered)} />
-            <Metric label="Expiration" value={formatEpochMillis(row.expiration)} />
+            <MetricTile label="Delivery" value={row.deliveryMode ?? '-'} />
+            <MetricTile label="Type" value={row.type ?? '-'} />
+            <MetricTile label="Redelivered" value={formatBoolean(row.redelivered)} />
+            <MetricTile label="Expiration" value={formatEpochMillis(row.expiration)} />
           </div>
           {feedback ? <div className="text-muted-foreground text-[12px] leading-4">{feedback}</div> : null}
           {row.bodyText ? (
@@ -1038,6 +1022,7 @@ export function JmsDestinationDetails() {
   const failures = query.data?.partialFailures ?? []
   const returnPath = useMemo(() => detailReturnPath(location.state, '/jms'), [location.state])
   const row = query.data?.row ?? null
+  const signals = row ? signalsWithinSeverity(jmsAlertSignals(row), row.severity) : {}
   const refetchAll = useCallback(() => void query.refetch(), [query])
 
   return (
@@ -1094,6 +1079,7 @@ export function JmsDestinationDetails() {
 
       {row ? (
         <div className="space-y-4">
+          {/* The figures behind a warning or critical status take its colour (§9.5). */}
           <div className="grid gap-3 md:grid-cols-4">
             <div className="border-border bg-surface-1 min-h-[72px] border px-3 py-2">
               <div className="text-muted-foreground text-[11px] uppercase leading-[14px] tracking-[0.04em]">Status</div>
@@ -1101,21 +1087,26 @@ export function JmsDestinationDetails() {
                 <StatusBadge kind="custom" tone={severityTone(row.severity)} label={row.severity} />
               </div>
             </div>
-            <Metric label="Runtime" value={row.state ?? '-'} />
-            <Metric label="Server" value={row.serverName} />
-            <Metric label="JMS Server" value={row.jmsServerName} />
-            <Metric label="Type" value={row.destinationType ?? '-'} />
+            <MetricTile label="Runtime" value={row.state ?? '-'} alertLevel={signals.state} />
+            <MetricTile label="Server" value={row.serverName} />
+            <MetricTile label="JMS Server" value={row.jmsServerName} />
+            <MetricTile label="Type" value={row.destinationType ?? '-'} />
           </div>
 
           <div className="grid gap-3 md:grid-cols-4">
-            <Metric label="Messages" value={formatNumber(row.messagesCurrentCount)} />
-            <Metric label="Pending" value={formatNumber(row.messagesPendingCount)} />
-            <Metric label="High" value={formatNumber(row.messagesHighCount)} />
-            <Metric label="Received" value={formatNumber(row.messagesReceivedCount)} />
-            <Metric label="Bytes" value={formatNumber(row.bytesCurrentCount)} />
-            <Metric label="Bytes pending" value={formatNumber(row.bytesPendingCount)} />
-            <Metric label="Bytes high" value={formatNumber(row.bytesHighCount)} />
-            <Metric label="Consumers" value={formatNumber(row.consumersCurrentCount)} detail={`high ${formatNumber(row.consumersHighCount)} · total ${formatNumber(row.consumersTotalCount)}`} />
+            <MetricTile label="Messages" value={formatNumber(row.messagesCurrentCount)} alertLevel={signals.messages} />
+            <MetricTile label="Pending" value={formatNumber(row.messagesPendingCount)} alertLevel={signals.pending} />
+            <MetricTile label="High" value={formatNumber(row.messagesHighCount)} />
+            <MetricTile label="Received" value={formatNumber(row.messagesReceivedCount)} />
+            <MetricTile label="Bytes" value={formatNumber(row.bytesCurrentCount)} />
+            <MetricTile label="Bytes pending" value={formatNumber(row.bytesPendingCount)} />
+            <MetricTile label="Bytes high" value={formatNumber(row.bytesHighCount)} />
+            <MetricTile
+              label="Consumers"
+              value={formatNumber(row.consumersCurrentCount)}
+              detail={`high ${formatNumber(row.consumersHighCount)} · total ${formatNumber(row.consumersTotalCount)}`}
+              alertLevel={signals.consumers}
+            />
           </div>
 
           <PausePanel row={row} onRefresh={refetchAll} />

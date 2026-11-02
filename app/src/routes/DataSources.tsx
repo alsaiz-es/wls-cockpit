@@ -1,4 +1,6 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
+import { signalsWithinSeverity } from '@/api/alert-rules'
+import { jdbcAlertSignals } from '@/api/queries/dashboard-jdbc-normalization'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { Loader2, Plus, Search } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -31,6 +33,7 @@ import { useDataSources, type DataSourceRuntimeRow, type DataSourceSeverity } fr
 import type { DeploymentTargetRef } from '@/api/queries/deployments'
 import { useAuth } from '@/auth/useAuth'
 import {
+  alertTextClass,
   ConfirmDialog,
   DataTable,
   MetricTrend,
@@ -647,15 +650,16 @@ function DataSourceConfigForm({
   )
 }
 
+// The figures behind a row's warning or critical status take its colour (§9.5).
+function rowSignals(row: DataSourceRuntimeRow) {
+  return signalsWithinSeverity(jdbcAlertSignals(row), row.severity)
+}
+
 function UtilizationCell({ row }: { row: DataSourceRuntimeRow }) {
   if (row.utilization === null) return <span className="text-status-neutral">–</span>
   const percent = Math.round(row.utilization * 100)
-  const tone =
-    row.severity === 'critical'
-      ? 'text-status-negative'
-      : row.severity === 'warning'
-        ? 'text-status-warning'
-        : 'text-status-positive'
+  // Coloured by pool usage only: a pool that is warning for waiting requests keeps a green bar.
+  const tone = alertTextClass(rowSignals(row).utilization) ?? 'text-status-positive'
 
   return (
     <span className="inline-flex items-center justify-end gap-1.5 tabular-nums">
@@ -992,6 +996,7 @@ export function DataSources() {
               'connections.active',
             )}
             value={formatNumber(row.activeConnectionsCurrentCount)}
+            alertLevel={rowSignals(row).utilization}
             title={`${row.name} active connections`}
           />
         ),
@@ -1046,6 +1051,7 @@ export function DataSources() {
               'connections.waiting',
             )}
             value={formatNumber(row.waitingForConnectionCurrentCount)}
+            alertLevel={rowSignals(row).waiting}
             title={`${row.name} waiting connections`}
           />
         ),

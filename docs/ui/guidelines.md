@@ -592,6 +592,12 @@ page). Never hardcode a threshold in a classifier or a tone helper.
 - Thresholds are edited on the Alert Rules page, one scope at a time (all
   connections, or the current one), with the inherited value shown beside
   each rule. The page writes `alerts.yaml`; it never writes WebLogic.
+- When a resource is warning or critical, the figures behind it take that
+  colour wherever they appear (list cells, detail tiles, dashboard tables),
+  and only those: messages and consumers for a queue with no consumers, not
+  its byte counts. Classifiers return these signals (`jmsAlertSignals`,
+  `jdbcAlertSignals`, the dashboard's sustained ones); a figure is never
+  shown worse than its resource.
 - States WebLogic reports itself (failed, overloaded, paused, unhealthy
   deployments) are immediate and not configurable.
 - A counter that only grows (leaked connections) alerts on its increase, never
@@ -717,6 +723,8 @@ do not all exist yet — they appear when their first feature needs them.
 - `<HeapBar value max>` — labeled progress bar (§10).
 - `<RelativeTime value>` — `12m ago` with absolute tooltip (§10).
 - `<KeyValueGrid items columns>` — label–value rows for detail pages (§7.9).
+- `<MetricTile label value detail alertLevel>` — one figure on a detail page; takes
+  the alert colour when the figure is behind the resource's status (§9.5).
 - `<MonoText>` — `font-mono` text wrapper for identifiers and paths.
 
 When in doubt, **add a primitive** rather than inline one-off classes

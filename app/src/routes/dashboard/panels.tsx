@@ -16,7 +16,7 @@ import {
   serverMetricResourceId,
 } from '@/api/queries/metric-history'
 import type { ServerRuntimeRow } from '@/api/queries/server-runtimes'
-import { DataTable, HeapBar, MetricTrend, MonoText, StatusBadge, type DataTableColumn } from '@/components'
+import { alertTextClass, DataTable, HeapBar, MetricTrend, MonoText, StatusBadge, type DataTableColumn } from '@/components'
 import { deploymentLabel, formatNumber, severityTone } from './format'
 import { CompactStatusLine, Section, Unavailable } from './primitives'
 import { ServerStateBand } from './server-state-band'
@@ -164,6 +164,7 @@ export function ServerPressurePanel({
               'threads.pending',
             )}
             value={formatNumber(row.server.threads?.pending)}
+            alertLevel={snapshot.serverAlerts?.[row.server.name]?.pending}
             title={`${row.server.name} pending threads`}
           />
         ),
@@ -182,6 +183,7 @@ export function ServerPressurePanel({
               'threads.hogging',
             )}
             value={formatNumber(row.server.threads?.hogging)}
+            alertLevel={snapshot.serverAlerts?.[row.server.name]?.hogging}
             title={`${row.server.name} hogging threads`}
           />
         ),
@@ -200,6 +202,7 @@ export function ServerPressurePanel({
               'threads.stuck',
             )}
             value={formatNumber(row.server.threads?.stuck)}
+            alertLevel={snapshot.serverAlerts?.[row.server.name]?.stuck}
             title={`${row.server.name} stuck threads`}
           />
         ),
@@ -305,6 +308,7 @@ export function JmsPressurePanel({
               'messages.current',
             )}
             value={formatNumber(row.messagesCurrentCount)}
+            alertLevel={row.alertSignals?.messages}
             title={`${row.destinationName ?? row.jmsServerName} current messages`}
           />
         ),
@@ -323,6 +327,7 @@ export function JmsPressurePanel({
               'messages.pending',
             )}
             value={formatNumber(row.messagesPendingCount)}
+            alertLevel={row.alertSignals?.pending}
             title={`${row.destinationName ?? row.jmsServerName} pending messages`}
           />
         ),
@@ -332,7 +337,7 @@ export function JmsPressurePanel({
         header: 'CONSUMERS',
         align: 'right',
         className: 'font-mono tabular-nums',
-        cell: (row) => <MonoText>{formatNumber(row.consumersCurrentCount)}</MonoText>,
+        cell: (row) => <MonoText className={alertTextClass(row.alertSignals?.consumers)}>{formatNumber(row.consumersCurrentCount)}</MonoText>,
       },
       {
         id: 'state',
@@ -511,6 +516,7 @@ export function JdbcPoolsPanel({
               'connections.active',
             )}
             value={formatNumber(row.activeConnectionsCurrentCount)}
+            alertLevel={row.alertSignals?.utilization}
             title={`${row.name} active connections`}
           />
         ),
@@ -520,7 +526,7 @@ export function JdbcPoolsPanel({
         header: 'MAX',
         align: 'right',
         className: 'font-mono tabular-nums',
-        cell: (row) => <MonoText>{formatNumber(row.utilizationCapacity)}</MonoText>,
+        cell: (row) => <MonoText className={alertTextClass(row.alertSignals?.utilization)}>{formatNumber(row.utilizationCapacity)}</MonoText>,
       },
       {
         id: 'wait',
@@ -536,6 +542,7 @@ export function JdbcPoolsPanel({
               'connections.waiting',
             )}
             value={formatNumber(row.waitingForConnectionCurrentCount)}
+            alertLevel={row.alertSignals?.waiting}
             title={`${row.name} waiting connections`}
           />
         ),
@@ -545,7 +552,7 @@ export function JdbcPoolsPanel({
         header: 'LEAKS',
         align: 'right',
         className: 'font-mono tabular-nums',
-        cell: (row) => <MonoText>{formatNumber(row.leakedConnectionCount)}</MonoText>,
+        cell: (row) => <MonoText className={alertTextClass(row.alertSignals?.leaks)}>{formatNumber(row.leakedConnectionCount)}</MonoText>,
       },
     ],
     [metricScopeKey],

@@ -1,8 +1,10 @@
 import {
   alertRuleLevel,
+  collectAlertSignals,
   getActiveAlertRules,
-  worseAlertLevel,
+  worstAlertSignal,
   type AlertLevel,
+  type AlertSignals,
   type ResolvedAlertRules,
 } from '../alert-rules.ts'
 import {
@@ -26,6 +28,8 @@ export interface JdbcPoolRuntime {
   utilizationCapacity: number | null
   utilizationCapacitySource: DataSourceUtilizationCapacitySource | null
   severity: JdbcPoolSeverity
+  // Set by the dashboard: the figures that hold the pool at its level, judged over time.
+  alertSignals?: AlertSignals<DashboardJdbcSignal>
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -64,19 +68,27 @@ export function capJdbcUtilizationLevel(
   return level === 'critical' && pool.utilizationCapacitySource !== 'configuredMax' ? 'warning' : level
 }
 
-export function classifyJdbcPool(
-  pool: Pick<
-    JdbcPoolRuntime,
-    'state' | 'deploymentState' | 'waitingForConnectionCurrentCount' | 'utilization' | 'utilizationCapacitySource'
-  >,
+export type JdbcAlertSignal = 'state' | 'waiting' | 'utilization'
+export type DashboardJdbcSignal = JdbcAlertSignal | 'leaks'
+
+type JdbcClassifiable = Pick<
+  JdbcPoolRuntime,
+  'state' | 'deploymentState' | 'waitingForConnectionCurrentCount' | 'utilization' | 'utilizationCapacitySource'
+>
+
+export function jdbcAlertSignals(
+  pool: JdbcClassifiable,
   rules: ResolvedAlertRules = getActiveAlertRules(),
-): JdbcPoolSeverity {
-  const level = worseAlertLevel(
-    jdbcStateLevel(pool),
-    alertRuleLevel(rules.rules['jdbc.waiting'], pool.waitingForConnectionCurrentCount),
-    capJdbcUtilizationLevel(alertRuleLevel(rules.rules['jdbc.utilization'], jdbcUtilizationPercent(pool)), pool),
-  )
-  return level ?? 'healthy'
+): AlertSignals<JdbcAlertSignal> {
+  return collectAlertSignals<JdbcAlertSignal>([
+    [['state'], jdbcStateLevel(pool)],
+    [['waiting'], alertRuleLevel(rules.rules['jdbc.waiting'], pool.waitingForConnectionCurrentCount)],
+    [['utilization'], capJdbcUtilizationLevel(alertRuleLevel(rules.rules['jdbc.utilization'], jdbcUtilizationPercent(pool)), pool)],
+  ])
+}
+
+export function classifyJdbcPool(pool: JdbcClassifiable, rules: ResolvedAlertRules = getActiveAlertRules()): JdbcPoolSeverity {
+  return worstAlertSignal(jdbcAlertSignals(pool, rules)) ?? 'healthy'
 }
 
 export function normalizeJdbcPool(

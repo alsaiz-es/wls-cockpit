@@ -376,3 +376,97 @@ test('saving is refused when the file changed meanwhile or is not valid YAML', a
     await rm(dir, { recursive: true, force: true })
   }
 })
+
+test('a warning names the figures behind it, never worse than the resource itself', async () => {
+  const { jmsAlertSignals } = await import('../src/api/queries/dashboard-jms-classification.ts')
+  const { jdbcAlertSignals } = await import('../src/api/queries/dashboard-jdbc-normalization.ts')
+  const { signalsWithinSeverity } = await import('../src/api/alert-rules.ts')
+  const queue = {
+    destinationName: 'DemoModule!DemoQueue',
+    state: 'advertised_in_cluster_jndi',
+    messagesCurrentCount: 7,
+    messagesPendingCount: 0,
+    consumersCurrentCount: 0,
+    consumptionPaused: false,
+    productionPaused: false,
+    insertionPaused: false,
+    consumptionPausedState: null,
+    productionPausedState: null,
+    insertionPausedState: null,
+  }
+  // The queue in the screenshot: messages and no consumers.
+  assert.deepEqual(jmsAlertSignals(queue, DEFAULT_RESOLVED_ALERT_RULES), { messages: 'warning', consumers: 'warning' })
+  assert.deepEqual(jmsAlertSignals({ ...queue, consumersCurrentCount: 2, messagesPendingCount: 12_000 }, DEFAULT_RESOLVED_ALERT_RULES), {
+    messages: 'critical',
+    pending: 'critical',
+  })
+  assert.deepEqual(jmsAlertSignals({ ...queue, consumersCurrentCount: 2, consumptionPaused: true }, DEFAULT_RESOLVED_ALERT_RULES), {
+    pause: 'critical',
+    messages: 'critical',
+  })
+  assert.deepEqual(jmsAlertSignals({ ...queue, consumersCurrentCount: 2 }, DEFAULT_RESOLVED_ALERT_RULES), {})
+
+  const pool = {
+    state: 'Running',
+    deploymentState: 2,
+    waitingForConnectionCurrentCount: 6,
+    utilization: 0.4,
+    utilizationCapacitySource: 'configuredMax' as const,
+  }
+  assert.deepEqual(jdbcAlertSignals(pool, DEFAULT_RESOLVED_ALERT_RULES), { waiting: 'critical' })
+  assert.deepEqual(jdbcAlertSignals({ ...pool, waitingForConnectionCurrentCount: 0, utilization: 0.9 }, DEFAULT_RESOLVED_ALERT_RULES), {
+    utilization: 'warning',
+  })
+
+  // The dashboard held the pool at warning (its duration has not run out for critical yet).
+  assert.deepEqual(signalsWithinSeverity({ waiting: 'critical', state: 'warning' }, 'warning'), { waiting: 'warning', state: 'warning' })
+  assert.deepEqual(signalsWithinSeverity({ waiting: 'critical' }, 'healthy'), {})
+  assert.deepEqual(signalsWithinSeverity({ waiting: 'critical' }, 'critical'), { waiting: 'critical' })
+})
+
+test('the dashboard keeps the sustained figures, including new leaks', async () => {
+  const { sustainedJdbcSignals, sustainedJmsSignals } = await import('../src/api/queries/dashboard-alert-levels.ts')
+  const tracker = new AlertSustainTracker()
+  const context = (now: number) => ({ rules: DEFAULT_RESOLVED_ALERT_RULES, tracker, now })
+  const pool = {
+    serverName: 'AdminServer',
+    name: 'OrdersDS',
+    state: 'Running',
+    deploymentState: 2,
+    activeConnectionsCurrentCount: 1,
+    currCapacity: 5,
+    configuredMaxCapacity: 20,
+    waitingForConnectionCurrentCount: 0,
+    leakedConnectionCount: 3,
+    utilization: 0.05,
+    utilizationCapacity: 20,
+    utilizationCapacitySource: 'configuredMax' as const,
+    severity: 'healthy' as const,
+  }
+  assert.deepEqual(sustainedJdbcSignals(pool, context(0)), {})
+  assert.deepEqual(sustainedJdbcSignals({ ...pool, leakedConnectionCount: 4 }, context(10 * SECOND)), { leaks: 'warning' })
+
+  const queue = {
+    serverName: 'AdminServer',
+    jmsServerName: 'JMSServer1',
+    destinationName: 'DemoModule!DemoQueue',
+    state: null,
+    messagesCurrentCount: 7,
+    messagesPendingCount: 0,
+    consumersCurrentCount: 0,
+    consumptionPaused: false,
+    productionPaused: false,
+    insertionPaused: false,
+    consumptionPausedState: null,
+    productionPausedState: null,
+    insertionPausedState: null,
+  }
+  assert.deepEqual(sustainedJmsSignals(queue, context(0)), {})
+  for (let seconds = 10; seconds < 300; seconds += 10) sustainedJmsSignals(queue, context(seconds * SECOND))
+  assert.deepEqual(sustainedJmsSignals(queue, context(300 * SECOND)), { messages: 'warning', consumers: 'warning' })
+  assert.deepEqual(sustainedJmsSignals({ ...queue, consumptionPaused: true }, context(310 * SECOND)), {
+    pause: 'critical',
+    messages: 'critical',
+    consumers: 'warning',
+  })
+})
