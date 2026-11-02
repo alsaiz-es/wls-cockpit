@@ -1027,7 +1027,7 @@ export function Servers() {
             updateTableState({ filters: { state: event.target.value } })
             clearSelection()
           }}
-          className="border-input bg-background h-8 min-w-[156px] rounded-[4px] border px-2 font-mono text-[13px] leading-[18px] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="border-input bg-background h-8 min-w-[156px] rounded-[4px] border px-2 text-[13px] leading-[18px] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <option value="all">All states</option>
           {visibleStateOptions.map((state) => (

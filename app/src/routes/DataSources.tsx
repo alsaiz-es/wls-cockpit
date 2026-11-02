@@ -46,6 +46,7 @@ import { TargetChangeNotice } from '@/components/target-change-notice'
 import { targetChange } from '@/components/target-change-model'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { filterOptionLabel } from '@/components/filter-option-label'
 import {
   parseRuntimeTableUrlState,
   serializeRuntimeTableUrlState,
@@ -1285,7 +1286,7 @@ export function DataSources() {
         >
           {severityFilters.map((option) => (
             <option key={option} value={option}>
-              {option === 'all' ? 'All statuses' : option}
+              {filterOptionLabel(option, 'All statuses')}
             </option>
           ))}
         </select>

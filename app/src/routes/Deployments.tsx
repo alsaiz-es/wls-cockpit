@@ -1239,7 +1239,7 @@ export function Deployments() {
           aria-label="Filter deployment server"
           value={server}
           onChange={(event) => updateTableState({ filters: { server: event.target.value } })}
-          className="border-input bg-background h-8 min-w-[148px] rounded-[4px] border px-2 font-mono text-[13px] leading-[18px] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="border-input bg-background h-8 min-w-[148px] rounded-[4px] border px-2 text-[13px] leading-[18px] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <option value="all">All servers</option>
           {serverOptions.map((serverName) => (
@@ -1252,7 +1252,7 @@ export function Deployments() {
           aria-label="Filter deployment state"
           value={deploymentState}
           onChange={(event) => updateTableState({ filters: { deploymentState: event.target.value } })}
-          className="border-input bg-background h-8 min-w-[132px] rounded-[4px] border px-2 font-mono text-[13px] leading-[18px] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="border-input bg-background h-8 min-w-[132px] rounded-[4px] border px-2 text-[13px] leading-[18px] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <option value="all">All states</option>
           {deploymentStateOptions.map((state) => (
@@ -1267,7 +1267,7 @@ export function Deployments() {
               aria-label="Filter matrix target"
               value={matrixTargetFilter}
               onChange={(event) => setMatrixTargetFilter(event.target.value)}
-              className="border-input bg-background h-8 min-w-[164px] rounded-[4px] border px-2 font-mono text-[13px] leading-[18px] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="border-input bg-background h-8 min-w-[164px] rounded-[4px] border px-2 text-[13px] leading-[18px] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <option value="all">All targets</option>
               {matrix.targets.map((target) => (
@@ -1280,7 +1280,7 @@ export function Deployments() {
               aria-label="Filter matrix cluster"
               value={matrixClusterFilter}
               onChange={(event) => setMatrixClusterFilter(event.target.value)}
-              className="border-input bg-background h-8 min-w-[156px] rounded-[4px] border px-2 font-mono text-[13px] leading-[18px] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="border-input bg-background h-8 min-w-[156px] rounded-[4px] border px-2 text-[13px] leading-[18px] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <option value="all">All clusters</option>
               {matrixClusterOptions.map((cluster) => (
@@ -1293,7 +1293,7 @@ export function Deployments() {
               aria-label="Filter matrix drift"
               value={matrixDriftFilter}
               onChange={(event) => setMatrixDriftFilter(event.target.value as 'all' | DeploymentMatrixDrift)}
-              className="border-input bg-background h-8 min-w-[156px] rounded-[4px] border px-2 font-mono text-[13px] leading-[18px] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="border-input bg-background h-8 min-w-[156px] rounded-[4px] border px-2 text-[13px] leading-[18px] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <option value="all">All drift</option>
               {matrixDriftOptions.map((option) => (

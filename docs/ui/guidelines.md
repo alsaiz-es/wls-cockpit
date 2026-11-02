@@ -155,7 +155,8 @@ a page header inside a `Card`.** Just plain divs.
 - Second row (`PageHeader` `meta`, `updatedAt`, `refreshing`, `onRefresh`):
   page-level toggles and counts on the left; on the right, always in this
   order, `Updated <relative time>`, the refetch spinner, and one ghost
-  `Refresh`. One Refresh per screen. Detail pages put the `← <list>` link
+  `Refresh`. One page-level Refresh; only a section with its own live
+  stream (a log tail) keeps its own controls. Detail pages put the `← <list>` link
   first on the left: it returns to the list with the filters and sort the
   operator left there, which the breadcrumb does not.
 - 16 px gap between header block and the next element.
@@ -390,6 +391,9 @@ buttons. Icon-+text is fine; icon-only uses square 28 px with a tooltip.
 - Error state: red border + 11 px red helper text.
 - Selects use the native `<select>` for v1 (already used in `Login.tsx`).
   Replace with a Radix Select only when we need search/grouping/multi.
+- Filter selects share `FILTER_SELECT_CLASS`, use the sans font and sentence
+  case (`All servers`, `Warning`; `filterOptionLabel`), and keep server and
+  resource names exactly as WebLogic reports them.
 
 #### Dense configuration editors
 

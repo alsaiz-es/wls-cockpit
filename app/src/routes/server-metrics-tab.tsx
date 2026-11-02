@@ -27,6 +27,7 @@ import {
 } from '@/components/server-metric-chart-model'
 import { Button } from '@/components/ui/button'
 import { MonoText, StatusBadge } from '@/components'
+import { FILTER_SELECT_CLASS } from '@/components/filter-option-label'
 import { serverMetricCaptureVisualFixture, type ServerMetricCaptureFixtureName } from './server-metrics-fixtures'
 
 interface ServerMetricsTabProps {
@@ -227,7 +228,7 @@ function CaptureControls({
         <div className="flex flex-wrap items-center gap-2">
           <select
             aria-label="Capture cadence"
-            className="h-8 border border-border bg-background px-2 text-[13px]"
+            className={FILTER_SELECT_CLASS}
             value={session?.status === 'active' ? session.pollingIntervalMs : cadence}
             disabled={!scopeKey}
             onChange={(event) => {

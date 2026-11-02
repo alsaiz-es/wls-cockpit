@@ -21,6 +21,7 @@ import {
 } from '@/components'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { FILTER_SELECT_CLASS, filterOptionLabel } from '@/components/filter-option-label'
 import {
   parseRuntimeTableUrlState,
   serializeRuntimeTableUrlState,
@@ -438,29 +439,29 @@ export function Jms() {
             className="h-8 rounded-[4px] pl-7 text-[13px]"
           />
         </div>
-        <select aria-label="Filter severity" className="h-8 border border-border bg-background px-2 text-[13px]" value={severity} onChange={(event) => updateTableState({ filters: { severity: event.target.value } })}>
-          {severityFilters.map((value) => <option key={value} value={value}>{value}</option>)}
+        <select aria-label="Filter severity" className={FILTER_SELECT_CLASS} value={severity} onChange={(event) => updateTableState({ filters: { severity: event.target.value } })}>
+          {severityFilters.map((value) => <option key={value} value={value}>{filterOptionLabel(value, 'All statuses')}</option>)}
         </select>
-        <select aria-label="Filter WebLogic server" className="h-8 border border-border bg-background px-2 text-[13px]" value={server} onChange={(event) => updateTableState({ filters: { server: event.target.value } })}>
-          {['all', ...serverOptions].map((value) => <option key={value} value={value}>{value === 'all' ? 'all servers' : value}</option>)}
+        <select aria-label="Filter WebLogic server" className={FILTER_SELECT_CLASS} value={server} onChange={(event) => updateTableState({ filters: { server: event.target.value } })}>
+          {['all', ...serverOptions].map((value) => <option key={value} value={value}>{value === 'all' ? 'All servers' : value}</option>)}
         </select>
-        <select aria-label="Filter JMS server" className="h-8 border border-border bg-background px-2 text-[13px]" value={jmsServer} onChange={(event) => updateTableState({ filters: { jmsServer: event.target.value } })}>
-          {['all', ...jmsServerOptions].map((value) => <option key={value} value={value}>{value === 'all' ? 'all JMS servers' : value}</option>)}
+        <select aria-label="Filter JMS server" className={FILTER_SELECT_CLASS} value={jmsServer} onChange={(event) => updateTableState({ filters: { jmsServer: event.target.value } })}>
+          {['all', ...jmsServerOptions].map((value) => <option key={value} value={value}>{value === 'all' ? 'All JMS servers' : value}</option>)}
         </select>
-        <select aria-label="Filter destination type" className="h-8 border border-border bg-background px-2 text-[13px]" value={type} onChange={(event) => updateTableState({ filters: { type: event.target.value } })}>
-          {['all', ...typeOptions].map((value) => <option key={value} value={value}>{value === 'all' ? 'all types' : value}</option>)}
+        <select aria-label="Filter destination type" className={FILTER_SELECT_CLASS} value={type} onChange={(event) => updateTableState({ filters: { type: event.target.value } })}>
+          {['all', ...typeOptions].map((value) => <option key={value} value={value}>{value === 'all' ? 'All types' : value}</option>)}
         </select>
-        <select aria-label="Filter backlog" className="h-8 border border-border bg-background px-2 text-[13px]" value={backlog} onChange={(event) => updateTableState({ filters: { backlog: event.target.value } })}>
-          <option value="all">all backlog</option>
-          <option value="backlog">messages</option>
-          <option value="pending">pending</option>
-          <option value="zeroConsumers">zero consumers</option>
-          <option value="stalled">backlog, no consumers</option>
+        <select aria-label="Filter backlog" className={FILTER_SELECT_CLASS} value={backlog} onChange={(event) => updateTableState({ filters: { backlog: event.target.value } })}>
+          <option value="all">All backlog</option>
+          <option value="backlog">Messages</option>
+          <option value="pending">Pending</option>
+          <option value="zeroConsumers">Zero consumers</option>
+          <option value="stalled">Backlog, no consumers</option>
         </select>
-        <select aria-label="Filter pause state" className="h-8 border border-border bg-background px-2 text-[13px]" value={paused} onChange={(event) => updateTableState({ filters: { paused: event.target.value } })}>
-          <option value="all">all pause states</option>
-          <option value="paused">paused</option>
-          <option value="enabled">enabled</option>
+        <select aria-label="Filter pause state" className={FILTER_SELECT_CLASS} value={paused} onChange={(event) => updateTableState({ filters: { paused: event.target.value } })}>
+          <option value="all">All pause states</option>
+          <option value="paused">Paused</option>
+          <option value="enabled">Enabled</option>
         </select>
         {hasActiveFilters ? (
           <Button type="button" variant="ghost" size="sm" onClick={() => setSearchParams(new URLSearchParams(), { replace: true })}>

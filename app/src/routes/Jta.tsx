@@ -21,6 +21,7 @@ import {
 } from '@/components'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { FILTER_SELECT_CLASS, filterOptionLabel } from '@/components/filter-option-label'
 import { detailReturnState } from './detail-return-state'
 import {
   parseRuntimeTableUrlState,
@@ -322,31 +323,31 @@ export function Jta() {
         </div>
         <select
           aria-label="Filter JTA severity"
-          className="h-8 border border-border bg-background px-2 text-[13px]"
+          className={FILTER_SELECT_CLASS}
           value={severity}
           onChange={(event) => updateTableState({ filters: { severity: event.target.value } })}
         >
-          {severityFilters.map((value) => <option key={value} value={value}>{value}</option>)}
+          {severityFilters.map((value) => <option key={value} value={value}>{filterOptionLabel(value, 'All statuses')}</option>)}
         </select>
         <select
           aria-label="Filter JTA server"
-          className="h-8 border border-border bg-background px-2 text-[13px]"
+          className={FILTER_SELECT_CLASS}
           value={server}
           onChange={(event) => updateTableState({ filters: { server: event.target.value } })}
         >
-          <option value="all">all servers</option>
+          <option value="all">All servers</option>
           {serverOptions.map((value) => <option key={value} value={value}>{value}</option>)}
         </select>
         <select
           aria-label="Filter JTA service"
-          className="h-8 border border-border bg-background px-2 text-[13px]"
+          className={FILTER_SELECT_CLASS}
           value={service}
           onChange={(event) => updateTableState({ filters: { service: event.target.value } })}
         >
-          <option value="all">all services</option>
+          <option value="all">All services</option>
           <option value="RUNNING">RUNNING</option>
-          <option value="other">other</option>
-          <option value="unavailable">unavailable</option>
+          <option value="other">Other</option>
+          <option value="unavailable">Unavailable</option>
         </select>
         {hasActiveFilters ? (
           <Button type="button" variant="ghost" size="sm" onClick={() => updateTableState({ search: '', filters: { severity: 'all', server: 'all', service: 'all' }, sort: null })}>

@@ -20,6 +20,7 @@ import {
 } from '@/components'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { FILTER_SELECT_CLASS, filterOptionLabel } from '@/components/filter-option-label'
 import { detailReturnState } from './detail-return-state'
 import {
   parseRuntimeTableUrlState,
@@ -358,14 +359,14 @@ export function WorkManagers() {
             className="h-8 rounded-[4px] pl-7 text-[13px]"
           />
         </div>
-        <select aria-label="Filter WebLogic server" className="h-8 border border-border bg-background px-2 text-[13px]" value={server} onChange={(event) => updateTableState({ filters: { server: event.target.value } })}>
-          {['all', ...serverOptions].map((value) => <option key={value} value={value}>{value === 'all' ? 'all servers' : value}</option>)}
+        <select aria-label="Filter WebLogic server" className={FILTER_SELECT_CLASS} value={server} onChange={(event) => updateTableState({ filters: { server: event.target.value } })}>
+          {['all', ...serverOptions].map((value) => <option key={value} value={value}>{value === 'all' ? 'All servers' : value}</option>)}
         </select>
-        <select aria-label="Filter severity" className="h-8 border border-border bg-background px-2 text-[13px]" value={severity} onChange={(event) => updateTableState({ filters: { severity: event.target.value } })}>
-          {severityFilters.map((value) => <option key={value} value={value}>{value}</option>)}
+        <select aria-label="Filter severity" className={FILTER_SELECT_CLASS} value={severity} onChange={(event) => updateTableState({ filters: { severity: event.target.value } })}>
+          {severityFilters.map((value) => <option key={value} value={value}>{filterOptionLabel(value, 'All statuses')}</option>)}
         </select>
-        <select aria-label="Filter family" className="h-8 border border-border bg-background px-2 text-[13px]" value={family} onChange={(event) => updateTableState({ filters: { family: event.target.value } })}>
-          {familyFilters.map((value) => <option key={value} value={value}>{value === 'all' ? 'all families' : familyLabel(value as WorkManagerFamily)}</option>)}
+        <select aria-label="Filter family" className={FILTER_SELECT_CLASS} value={family} onChange={(event) => updateTableState({ filters: { family: event.target.value } })}>
+          {familyFilters.map((value) => <option key={value} value={value}>{value === 'all' ? 'All families' : filterOptionLabel(familyLabel(value as WorkManagerFamily), '')}</option>)}
         </select>
         {hasActiveFilters ? (
           <Button type="button" variant="ghost" size="sm" onClick={() => setSearchParams(new URLSearchParams(), { replace: true })}>

@@ -17,6 +17,7 @@ import {
 } from '@/components'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { FILTER_SELECT_CLASS } from '@/components/filter-option-label'
 import { cn } from '@/lib/utils'
 import { demoSensitiveValue } from './demo-readonly-values'
 
@@ -250,7 +251,7 @@ export function Jndi() {
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <select
           aria-label="Select WebLogic server"
-          className="h-8 min-w-[180px] border border-border bg-background px-2 text-[13px]"
+          className={`${FILTER_SELECT_CLASS} min-w-[180px]`}
           value={selectedServer ?? ''}
           onChange={(event) => selectServer(event.target.value || null)}
         >
