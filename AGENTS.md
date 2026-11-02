@@ -21,7 +21,7 @@ Each principle names the guard that fails when it is broken. Where there is none
    queries or fragments, and non-http(s) schemes are rejected.
    Guard: `app/tests/connection-profiles.test.ts` (proxy target tests).
 3. **Mutations sent from Cockpit are recorded in the local action audit**: lifecycle,
-   deployment, data source, JMS and JTA actions, and every write to the configuration tree
+   deployment, data source, JMS, JTA and user lockout actions, and every write to the configuration tree
    (`/edit/...`), including ones without a specific rule. Runtime POSTs are matched explicitly
    because WebLogic also uses POST for reads; a new runtime action needs its own rule.
    Guard: `app/tests/action-audit.test.ts`.

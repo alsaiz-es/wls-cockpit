@@ -206,6 +206,12 @@ const liveChecks = [
     forbidden: ['Coming soon', 'Request failed'],
   },
   {
+    name: 'security-live',
+    path: '/security',
+    expected: ['Security', 'User lockout per server', 'AdminServer', 'LOCKED NOW', 'INVALID LOGINS'],
+    forbidden: ['Coming soon', 'Request failed'],
+  },
+  {
     name: 'logs-live',
     path: '/logs',
     expected: [

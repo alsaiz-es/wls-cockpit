@@ -20,6 +20,7 @@ import { WorkManagers } from '@/routes/WorkManagers'
 import { NodeManager } from '@/routes/NodeManager'
 import { DomainConfigSnapshots } from '@/routes/DomainConfigSnapshots'
 import { ActionAudit } from '@/routes/ActionAudit'
+import { Security } from '@/routes/Security'
 
 export default function App() {
   return (
@@ -44,6 +45,7 @@ export default function App() {
         <Route path="/jndi" element={<Jndi />} />
         <Route path="/jta" element={<Jta />} />
         <Route path="/jta/:serverName" element={<JtaDetails />} />
+        <Route path="/security" element={<Security />} />
         <Route path="/logs" element={<Logs />} />
         <Route path="/logs/:serverName" element={<LogDetails />} />
         <Route path="/config-snapshots" element={<DomainConfigSnapshots />} />

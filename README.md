@@ -16,7 +16,8 @@ running domain:
 - **Domain dashboard** — server health, deployments in unexpected states, data sources under
   pressure and recent log errors on one screen.
 - **Servers** — state, JVM heap and threads per server; start, shut down, suspend and resume
-  several servers at once; stuck threads, thread dumps and live metrics per server.
+  several servers at once; stuck threads, thread dumps and live metrics per server; which servers
+  need a restart to apply activated changes.
 - **Deployments** — state per target, start / stop / redeploy, deploy from an AdminServer-side
   path, undeploy and target management.
 - **Data sources** — live pool statistics, test and reset pool, guided connection settings.
@@ -24,8 +25,9 @@ running domain:
 - **JMS** — servers and destinations inventory; optional message browse, detail, delete and
   produce over JMX (see [JMS over JMX](#optional-jms-over-jmx)).
 - **JTA, JNDI, clusters, work managers and Node Manager** — runtime views and guarded actions.
-- **Action audit** — lifecycle, deployment, data source, JMS and JTA actions and every configuration
-  change sent through Cockpit are recorded locally.
+- **Security** — user lockout counters per server, and clearing the lockout of a user.
+- **Action audit** — lifecycle, deployment, data source, JMS, JTA and user lockout actions and
+  every configuration change sent through Cockpit are recorded locally.
 - **Config snapshots and local alerts** — capture and compare domain configuration, and raise
   local alerts from runtime signals.
 

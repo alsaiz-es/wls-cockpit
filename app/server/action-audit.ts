@@ -20,7 +20,7 @@ export {
   AUDIT_VERSION_HEADER,
 }
 
-export type ActionAuditFamily = 'server' | 'cluster' | 'deployment' | 'datasource' | 'jms' | 'edit-session' | 'jta' | 'other'
+export type ActionAuditFamily = 'server' | 'cluster' | 'deployment' | 'datasource' | 'jms' | 'edit-session' | 'jta' | 'security' | 'other'
 export type ActionAuditStatus = 'success' | 'failure'
 
 export interface ActionAuditResource {
@@ -378,6 +378,15 @@ export function classifyActionAuditRequest(method: string, pathname: string, bod
   match = matchPath(withoutProxy, /\/domainRuntime\/serverRuntimes\/(?<server>[^/]+)\/JTARuntime\/(?<action>forceCommit|forceRollback)$/)
   if (match) return { family: 'jta', action: match.action, resource: resource('server', match.server) }
 
+  match = matchPath(
+    withoutProxy,
+    /\/domainRuntime\/serverRuntimes\/(?<server>[^/]+)\/serverSecurityRuntime\/(?:defaultRealmRuntime|realmRuntimes\/[^/]+)\/userLockoutManagerRuntime\/(?<action>clearLockout)$/,
+  )
+  if (match) {
+    const userName = typeof body === 'object' && body !== null ? readRecordText((body as Record<string, unknown>).userName) : null
+    return { family: 'security', action: match.action, resource: resource('user', userName ?? 'user', match.server) }
+  }
+
   if (pathname === '/api/jms/messages/delete' || pathname === '/api/jms/messages/produce') {
     const payload = typeof body === 'object' && body !== null ? body as Record<string, unknown> : {}
     const action = pathname.endsWith('/delete') ? 'delete' : 'produce'
@@ -488,7 +497,7 @@ export function parseActionAuditFilters(searchParams: URLSearchParams): ActionAu
   const until = Number(searchParams.get('until'))
   const limit = Number(searchParams.get('limit'))
   return {
-    family: family && ['server', 'cluster', 'deployment', 'datasource', 'jms', 'edit-session', 'jta', 'other'].includes(family) ? family : undefined,
+    family: family && ['server', 'cluster', 'deployment', 'datasource', 'jms', 'edit-session', 'jta', 'security', 'other'].includes(family) ? family : undefined,
     status: status && ['success', 'failure'].includes(status) ? status : undefined,
     target,
     since: Number.isFinite(since) && since > 0 ? since : undefined,

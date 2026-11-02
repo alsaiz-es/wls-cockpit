@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { readRuntimeConfig } from '../runtime-config.ts'
 
-export type ActionAuditFamily = 'server' | 'cluster' | 'deployment' | 'datasource' | 'jms' | 'edit-session' | 'jta' | 'other'
+export type ActionAuditFamily = 'server' | 'cluster' | 'deployment' | 'datasource' | 'jms' | 'edit-session' | 'jta' | 'security' | 'other'
 export type ActionAuditStatus = 'success' | 'failure'
 
 export interface ActionAuditRecord {
@@ -45,6 +45,7 @@ export const actionAuditFamilies: Array<ActionAuditFamily | 'all'> = [
   'jms',
   'edit-session',
   'jta',
+  'security',
   'other',
 ]
 

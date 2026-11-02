@@ -62,3 +62,23 @@ test('demo mode drops JMS message bodies on the server', async () => {
   assert.equal(masked.message.bodyUnavailableReason, JMS_DEMO_BODY_HIDDEN_REASON)
   assert.equal(maskJmsPayloadForDemo(null), null)
 })
+
+test('clearing a user lockout is offered in normal mode and removed in demo read-only mode', async () => {
+  const { lockoutClearServers } = await import('../src/routes/security-model.ts')
+  const row = (serverName: string, available: boolean) => ({
+    serverName,
+    lifecycleState: available ? ('RUNNING' as const) : ('SHUTDOWN' as const),
+    available,
+    error: null,
+    lockedUsersCurrentCount: available ? 1 : null,
+    userLockoutTotalCount: null,
+    invalidLoginAttemptsTotalCount: null,
+    invalidLoginUsersHighCount: null,
+    loginAttemptsWhileLockedTotalCount: null,
+    unlockedUsersTotalCount: null,
+  })
+  const rows = [row('AdminServer', true), row('server1', false)]
+
+  assert.deepEqual(lockoutClearServers(rows), ['AdminServer'])
+  assert.deepEqual(lockoutClearServers(rows, { readOnlyDemoMode: true }), [])
+})

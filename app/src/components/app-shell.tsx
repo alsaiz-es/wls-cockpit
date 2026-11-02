@@ -10,6 +10,7 @@ import {
   Package,
   RadioTower,
   Server,
+  ShieldCheck,
   Workflow,
 } from 'lucide-react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
@@ -43,6 +44,7 @@ const navItems = [
   { label: 'JMS', path: '/jms', icon: MessageSquareText },
   { label: 'JNDI', path: '/jndi', icon: Network },
   { label: 'JTA', path: '/jta', icon: Activity },
+  { label: 'Security', path: '/security', icon: ShieldCheck },
   { label: 'Logs', path: '/logs', icon: FileText },
   { label: 'Config Snapshots', path: '/config-snapshots', icon: Archive },
   { label: 'Action Audit', path: '/audit', icon: ClipboardList },

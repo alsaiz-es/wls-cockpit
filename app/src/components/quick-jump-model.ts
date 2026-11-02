@@ -20,6 +20,7 @@ const topLevelEntries: QuickJumpEntry[] = [
   { id: 'route:jms', label: 'JMS', detail: 'JMS servers and destinations', family: 'Route', href: '/jms', keywords: ['queue', 'topic', 'messages'] },
   { id: 'route:jndi', label: 'JNDI', detail: 'Server-scoped JNDI browser', family: 'Route', href: '/jndi', keywords: ['binding', 'tree'] },
   { id: 'route:jta', label: 'JTA', detail: 'Transaction runtime', family: 'Route', href: '/jta', keywords: ['transaction'] },
+  { id: 'route:security', label: 'Security', detail: 'User lockout', family: 'Route', href: '/security', keywords: ['lockout', 'unlock', 'user', 'login'] },
   { id: 'route:logs', label: 'Logs', detail: 'Server log activity', family: 'Route', href: '/logs', keywords: ['log', 'tail', 'records'] },
   { id: 'route:config-snapshots', label: 'Config Snapshots', detail: 'Local config snapshot diffs', family: 'Route', href: '/config-snapshots', keywords: ['configuration', 'diff'] },
   { id: 'route:audit', label: 'Action Audit', detail: 'Local mutation audit', family: 'Route', href: '/audit', keywords: ['audit', 'actions'] },

@@ -284,5 +284,24 @@ test('a trailing slash does not skip the audit of runtime actions', () => {
 test('the audit filter accepts every family the Audit page offers, including other', () => {
   assert.equal(parseActionAuditFilters(new URLSearchParams('family=other')).family, 'other')
   assert.equal(parseActionAuditFilters(new URLSearchParams('family=jta')).family, 'jta')
+  assert.equal(parseActionAuditFilters(new URLSearchParams('family=security')).family, 'security')
   assert.equal(parseActionAuditFilters(new URLSearchParams('family=bogus')).family, undefined)
+})
+
+test('clearing a user lockout is audited with the user and the server', () => {
+  assert.deepEqual(
+    classifyActionAuditRequest(
+      'POST',
+      '/api/wls/management/weblogic/14.1.2.0.0/domainRuntime/serverRuntimes/server1/serverSecurityRuntime/defaultRealmRuntime/userLockoutManagerRuntime/clearLockout',
+      { userName: 'integration' },
+    ),
+    { family: 'security', action: 'clearLockout', resource: { type: 'user', name: 'integration', parent: 'server1' } },
+  )
+  assert.equal(
+    classifyActionAuditRequest(
+      'GET',
+      '/api/wls/management/weblogic/14.1.2.0.0/domainRuntime/serverRuntimes/server1/serverSecurityRuntime/defaultRealmRuntime/userLockoutManagerRuntime',
+    ),
+    null,
+  )
 })
