@@ -55,7 +55,12 @@ function formatNumber(value: number | null) {
 function severityTone(severity: WorkManagerSeverity): StatusTone {
   if (severity === 'critical') return 'negative'
   if (severity === 'warning') return 'warning'
-  return 'neutral'
+  return 'positive'
+}
+
+// "neutral" is the absence of pressure; the operator reads it as OK.
+function severityLabel(severity: WorkManagerSeverity) {
+  return severity === 'neutral' ? 'ok' : severity
 }
 
 function familyLabel(family: WorkManagerFamily) {
@@ -227,11 +232,11 @@ export function WorkManagers() {
         cell: (row) =>
           row.severityReasons.length ? (
             <span className="flex min-w-0 flex-col gap-0.5" title={row.severityReasons.join('\n')}>
-              <StatusBadge kind="custom" tone={severityTone(row.severity)} label={row.severity} />
+              <StatusBadge kind="custom" tone={severityTone(row.severity)} label={severityLabel(row.severity)} />
               <span className="text-muted-foreground truncate text-[11px]">{row.severityReasons[0]}</span>
             </span>
           ) : (
-            <StatusBadge kind="custom" tone={severityTone(row.severity)} label={row.severity} />
+            <StatusBadge kind="custom" tone={severityTone(row.severity)} label={severityLabel(row.severity)} />
           ),
       },
       {
@@ -363,7 +368,7 @@ export function WorkManagers() {
           {['all', ...serverOptions].map((value) => <option key={value} value={value}>{value === 'all' ? 'All servers' : value}</option>)}
         </select>
         <select aria-label="Filter severity" className={FILTER_SELECT_CLASS} value={severity} onChange={(event) => updateTableState({ filters: { severity: event.target.value } })}>
-          {severityFilters.map((value) => <option key={value} value={value}>{filterOptionLabel(value, 'All statuses')}</option>)}
+          {severityFilters.map((value) => <option key={value} value={value}>{value === 'neutral' ? 'OK' : filterOptionLabel(value, 'All statuses')}</option>)}
         </select>
         <select aria-label="Filter family" className={FILTER_SELECT_CLASS} value={family} onChange={(event) => updateTableState({ filters: { family: event.target.value } })}>
           {familyFilters.map((value) => <option key={value} value={value}>{value === 'all' ? 'All families' : filterOptionLabel(familyLabel(value as WorkManagerFamily), '')}</option>)}

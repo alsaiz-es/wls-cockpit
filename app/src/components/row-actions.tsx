@@ -35,8 +35,13 @@ export function RowActions({ primary, more, moreLabel, disabled = false }: RowAc
       {primary ? (
         <Button
           type="button"
-          variant={primary.destructive ? 'destructive' : 'secondary'}
+          variant={primary.destructive ? 'outline' : 'secondary'}
           size="xs"
+          className={
+            primary.destructive
+              ? 'border-status-negative/60 text-status-negative hover:bg-status-negative/10 hover:text-status-negative dark:border-status-negative/60'
+              : undefined
+          }
           disabled={disabled}
           aria-label={primary.ariaLabel}
           onClick={primary.onSelect}

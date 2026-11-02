@@ -53,7 +53,12 @@ export function StatusBadge(props: StatusBadgeProps) {
       )}
     >
       <StatusGlyph tone={tone} />
-      <MonoText className="min-w-0 truncate uppercase tracking-[0.05em]" title={label}>
+      {/* A healthy state keeps its green dot and a quiet label, so warnings and failures are what
+          stand out in a long table (guidelines §7.2). */}
+      <MonoText
+        className={cn('min-w-0 truncate uppercase tracking-[0.05em]', tone === 'positive' && 'text-muted-foreground')}
+        title={label}
+      >
         {label}
       </MonoText>
     </span>

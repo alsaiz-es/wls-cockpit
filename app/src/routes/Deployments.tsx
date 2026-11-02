@@ -40,6 +40,7 @@ import {
   type DeploymentMatrixTargetColumn,
 } from '@/api/queries/deployment-targeting-matrix'
 import { useAuth } from '@/auth/useAuth'
+import { cn } from '@/lib/utils'
 import {
   ConfirmDialog,
   DataTable,
@@ -544,7 +545,7 @@ export function Deployments() {
       filters: {
         server: { param: 'server', defaultValue: 'all', allowedValues: ['all', ...serverOptions] },
         deploymentState: { param: 'deployment', defaultValue: 'all', allowedValues: ['all', ...deploymentStateOptions] },
-        hideInternal: { param: 'internal', defaultValue: false },
+        hideInternal: { param: 'internal', defaultValue: true },
       },
     }),
     [deploymentStateOptions, serverOptions],
@@ -558,12 +559,16 @@ export function Deployments() {
   const server = tableState.filters.server as string
   const deploymentState = tableState.filters.deploymentState as string
   const hideInternal = tableState.filters.hideInternal as boolean
+  const internalCount = useMemo(
+    () => new Set(allRows.filter((row) => row.scope === 'internal').map((row) => row.name)).size,
+    [allRows],
+  )
   const effectiveSort = sort ?? DEFAULT_SORT
   const hasActiveMatrixFilters =
     viewMode === 'matrix' &&
     (matrixTargetFilter !== 'all' || matrixClusterFilter !== 'all' || matrixDriftFilter !== 'all')
   const hasActiveFilters =
-    search.trim().length > 0 || server !== 'all' || deploymentState !== 'all' || hideInternal || hasActiveMatrixFilters
+    search.trim().length > 0 || server !== 'all' || deploymentState !== 'all' || !hideInternal || hasActiveMatrixFilters
   const updateTableState = useCallback(
     (patch: Partial<RuntimeTableUrlState>) => {
       const next = {
@@ -786,7 +791,15 @@ export function Deployments() {
         sortable: true,
         cell: (tableRow) => {
           const severity = tableRow.kind === 'group' ? tableRow.group.severity : tableRow.row.severity
-          return <StatusBadge kind="custom" tone={severityTone(severity)} label={severity} />
+          const health = tableRow.kind === 'group' ? tableRow.group.healthState : tableRow.row.healthState
+          const overall = tableRow.kind === 'group' ? tableRow.group.overallHealthState : tableRow.row.overallHealthState
+          // Health and overall health live in the tooltip and on the detail page; three badges per
+          // row that usually all say OK hid the row that did not.
+          return (
+            <span title={`Health ${health} · Overall ${overall}`}>
+              <StatusBadge kind="custom" tone={severityTone(severity)} label={severity} />
+            </span>
+          )
         },
       },
       {
@@ -841,29 +854,10 @@ export function Deployments() {
         sortable: true,
         cell: (tableRow) =>
           tableRow.kind === 'group' ? (
-            <MonoText>{tableRow.group.instances.length.toLocaleString()} instances</MonoText>
+            <MonoText>{tableRow.group.instances.length.toLocaleString()} {tableRow.group.instances.length === 1 ? 'instance' : 'instances'}</MonoText>
           ) : (
             <MonoText>{tableRow.row.serverName}</MonoText>
           ),
-      },
-      {
-        id: 'health',
-        header: 'HEALTH',
-        sortable: true,
-        cell: (tableRow) => (
-          <StatusBadge kind="wls-health" value={tableRow.kind === 'group' ? tableRow.group.healthState : tableRow.row.healthState} />
-        ),
-      },
-      {
-        id: 'overallHealth',
-        header: 'OVERALL',
-        sortable: true,
-        cell: (tableRow) => (
-          <StatusBadge
-            kind="wls-health"
-            value={tableRow.kind === 'group' ? tableRow.group.overallHealthState : tableRow.row.overallHealthState}
-          />
-        ),
       },
       {
         id: 'activeVersion',
@@ -897,12 +891,11 @@ export function Deployments() {
         sortable: true,
         cell: (tableRow) => {
           const scope = tableRow.kind === 'group' ? tableRow.group.scope : tableRow.row.scope
+          // Scope is a category, not a state: plain text, amber only when a group mixes both.
           return (
-          <StatusBadge
-            kind="custom"
-            tone={scope === 'external' ? 'positive' : scope === 'mixed' ? 'warning' : 'neutral'}
-            label={scope}
-          />
+            <span className={cn('text-[13px] capitalize', scope === 'mixed' ? 'text-status-warning' : 'text-muted-foreground')}>
+              {scope}
+            </span>
           )
         },
       },
@@ -1068,6 +1061,7 @@ export function Deployments() {
                 onChange={(event) => updateTableState({ filters: { hideInternal: event.target.checked } })}
               />
               Hide internal
+              {internalCount > 0 ? <MonoText className="text-[12px]">({internalCount.toLocaleString()})</MonoText> : null}
             </label>
           </>
         }
@@ -1315,7 +1309,7 @@ export function Deployments() {
               setMatrixDriftFilter('all')
               updateTableState({
                 search: '',
-                filters: { server: 'all', deploymentState: 'all', hideInternal: false },
+                filters: { server: 'all', deploymentState: 'all', hideInternal: true },
                 sort,
               })
             }}

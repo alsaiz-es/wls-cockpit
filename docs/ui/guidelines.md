@@ -364,8 +364,12 @@ Concrete example — Servers table:
 
 - 8 px dot + 4 px gap + label.
 - Label is uppercase, 11 px, monospace, `letter-spacing: 0.05em`.
-- No pill background. The dot carries the color, the label inherits text
-  color or muted depending on neutrality.
+- No pill background. The dot carries the color. Warning and failure labels
+  take the status color; healthy and neutral labels stay muted, so in a long
+  table the rows that need attention are the only colored text.
+- One status column per table. Secondary health signals (WebLogic health,
+  overall health) go in the badge tooltip and on the detail page, not in
+  extra badge columns. Categories (scope, type) are plain text, not badges.
 - Use the same component everywhere (table cells, drawer headers, top-bar
   environment indicator).
 
@@ -377,7 +381,7 @@ Concrete example — Servers table:
 | secondary   | surface-1            | border-strong | foreground          | Common actions               |
 | ghost       | none                 | none          | foreground          | Inline actions, toolbar      |
 | destructive | red-500              | none          | white               | Stop / undeploy / delete     |
-| outline-destructive | none         | red-500       | red-500             | Pre-confirmation destructive |
+| outline-destructive | none         | red-500       | red-500             | Pre-confirmation destructive, including row actions (Stop, Shutdown) |
 
 Sizes: `sm` (28 px), default (32 px), `lg` (36 px). No icon-only round
 buttons. Icon-+text is fine; icon-only uses square 28 px with a tooltip.

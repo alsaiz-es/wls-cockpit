@@ -172,7 +172,7 @@ const liveChecks = [
   {
     name: 'deployments-live',
     path: '/deployments',
-    expected: ['Deployments', 'Applications and deployment state.', 'Deploy', 'INSTANCES', 'TARGETS', 'WLSCockpitDemoApp', 'AdminServer', 'EXTERNAL'],
+    expected: ['Deployments', 'Applications and deployment state.', 'Deploy', 'INSTANCES', 'TARGETS', 'WLSCockpitDemoApp', 'AdminServer', 'External'],
     forbidden: ['Coming soon', 'Request failed'],
   },
   {
@@ -341,7 +341,7 @@ const urlStateChecks = [
   {
     name: 'deployments-url-state-return',
     path: '/deployments?q=WLSCockpitDemoApp&server=AdminServer&internal=1&sort=name&dir=desc',
-    expected: ['Deployments', 'Applications and deployment state.', 'INSTANCES', 'WLSCockpitDemoApp', 'AdminServer', 'EXTERNAL'],
+    expected: ['Deployments', 'Applications and deployment state.', 'INSTANCES', 'WLSCockpitDemoApp', 'AdminServer', 'External'],
     forbidden: ['Coming soon', 'Request failed'],
     detailHref: '/deployments/AdminServer/WLSCockpitDemoApp',
     detailExpected: ['WLSCockpitDemoApp', 'Single application runtime snapshot.', 'STATUS', 'EXTERNAL', 'SOURCE PATH'],
@@ -1823,7 +1823,7 @@ async function runDeploymentMatrixSmoke(session, creds) {
     session,
     'deployment-targeting-matrix-live-list',
     ['Deployments', 'Applications and deployment state.', 'INSTANCES'],
-    ['EXTERNAL', 'INTERNAL', 'READ-ONLY', 'No application runtimes reported by running servers.'],
+    ['External', 'EXTERNAL', 'INTERNAL', 'READ-ONLY', 'No application runtimes reported by running servers.'],
     ['Coming soon', 'Request failed'],
   )
   await clickButtonContaining(session, 'deployment-targeting-matrix-live', 'Matrix')
