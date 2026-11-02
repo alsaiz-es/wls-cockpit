@@ -504,7 +504,7 @@ export function NodeManager() {
         header: 'SERVERS',
         cell: (row) => (
           <div className="flex max-w-[360px] flex-wrap gap-1">
-            {row.serverNames.length === 0 ? <span className="text-status-neutral">-</span> : null}
+            {row.serverNames.length === 0 ? <span className="text-status-neutral">–</span> : null}
             {row.serverNames.map((serverName) => (
               <Button key={serverName} asChild variant="ghost" size="xs">
                 <Link to={`/servers/${encodeURIComponent(serverName)}`}>{serverName}</Link>

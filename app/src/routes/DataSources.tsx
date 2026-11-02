@@ -1294,7 +1294,7 @@ export function DataSources() {
           aria-label="Filter datasource server"
           value={server}
           onChange={(event) => updateTableState({ filters: { server: event.target.value } })}
-          className="border-input bg-background h-8 min-w-[148px] rounded-[4px] border px-2 font-mono text-[13px] leading-[18px] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="border-input bg-background h-8 min-w-[148px] rounded-[4px] border px-2 text-[13px] leading-[18px] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <option value="all">All servers</option>
           {serverOptions.map((serverName) => (
@@ -1307,7 +1307,7 @@ export function DataSources() {
           aria-label="Filter datasource state"
           value={state}
           onChange={(event) => updateTableState({ filters: { state: event.target.value } })}
-          className="border-input bg-background h-8 min-w-[132px] rounded-[4px] border px-2 font-mono text-[13px] leading-[18px] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="border-input bg-background h-8 min-w-[132px] rounded-[4px] border px-2 text-[13px] leading-[18px] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <option value="all">All states</option>
           {stateOptions.map((option) => (

@@ -34,7 +34,7 @@ function nodeDisplayPath(node: JndiTreeNode) {
 }
 
 function EmptyValue() {
-  return <MonoText className="text-status-neutral">-</MonoText>
+  return <MonoText className="text-status-neutral">–</MonoText>
 }
 
 function PartialBanner({

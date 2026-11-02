@@ -91,7 +91,7 @@ export function Messaging() {
               {row.healthReason}
             </span>
           ) : (
-            <span className="text-muted-foreground">-</span>
+            <span className="text-muted-foreground">–</span>
           ),
       },
     ],
@@ -119,7 +119,7 @@ export function Messaging() {
         header: 'PAUSED',
         cell: (row) => {
           const text = pausedText(row)
-          return text ? <span className="text-status-warning">{text}</span> : <span className="text-muted-foreground">-</span>
+          return text ? <span className="text-status-warning">{text}</span> : <span className="text-muted-foreground">–</span>
         },
       },
       {
@@ -128,7 +128,7 @@ export function Messaging() {
         className: 'min-w-[260px]',
         cell: (row) =>
           row.remoteEndpoints.length === 0 ? (
-            <span className="text-muted-foreground">-</span>
+            <span className="text-muted-foreground">–</span>
           ) : (
             <div className="space-y-0.5">
               {row.remoteEndpoints.map((endpoint) => (
@@ -173,7 +173,7 @@ export function Messaging() {
               {row.description}
             </span>
           ) : (
-            <span className="text-muted-foreground">-</span>
+            <span className="text-muted-foreground">–</span>
           ),
       },
     ],

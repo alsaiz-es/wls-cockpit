@@ -340,7 +340,10 @@ Visual rules:
 - Row actions: one primary action as a button (Test, Start/Stop) and the
   rest in a `…` menu (`<RowActions>`), in a narrow column pinned to the
   right edge (`sticky: 'right'` on the column) so it stays visible when a
-  wide table scrolls horizontally. Destructive items go last, after a
+  wide table scrolls horizontally. The row's primary action uses the
+  secondary variant even when it is destructive (Stop, Shutdown): in a domain
+  with dozens of applications a red button per row is noise. The confirmation
+  dialog carries the destructive styling. Destructive items go last, after a
   separator. Every lifecycle or configuration action, not only destructive
   ones, goes through `<ConfirmDialog>`, whose text names exactly what is
   affected (e.g. every target of a redeploy).
@@ -394,7 +397,7 @@ Concrete example — Servers table:
 | secondary   | surface-1            | border-strong | foreground          | Common actions               |
 | ghost       | none                 | none          | foreground          | Inline actions, toolbar      |
 | destructive | red-500              | none          | white               | Stop / undeploy / delete     |
-| outline-destructive | none         | red-500       | red-500             | Pre-confirmation destructive, including row actions (Stop, Shutdown) |
+| outline-destructive | none         | red-500       | red-500             | Pre-confirmation destructive outside tables |
 
 Sizes: `sm` (28 px), default (32 px), `lg` (36 px). No icon-only round
 buttons. Icon-+text is fine; icon-only uses square 28 px with a tooltip.

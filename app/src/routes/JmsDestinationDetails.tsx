@@ -938,7 +938,7 @@ function MessageBrowsePanel({
                           props {message.properties.count.toLocaleString()}: {message.properties.names.join(', ')}
                         </div>
                       ) : (
-                        <span className="text-muted-foreground text-[12px]">-</span>
+                        <span className="text-muted-foreground text-[12px]">–</span>
                       )}
                     </td>
                     <td className="px-3 py-2 text-right">

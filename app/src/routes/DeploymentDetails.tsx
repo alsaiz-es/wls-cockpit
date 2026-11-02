@@ -136,7 +136,7 @@ function HealthSymptomsPanel({ symptoms }: { symptoms: DeploymentHealthSymptom[]
                   {symptom.severity ? (
                     <StatusBadge kind="custom" tone={symptomTone(symptom)} label={symptom.severity} />
                   ) : (
-                    <span className="text-muted-foreground text-[13px]">-</span>
+                    <span className="text-muted-foreground text-[13px]">–</span>
                   )}
                 </td>
                 <td className="px-3 py-2">
@@ -152,7 +152,7 @@ function HealthSymptomsPanel({ symptoms }: { symptoms: DeploymentHealthSymptom[]
                     <StatusBadge kind="custom" tone={symptomCategoryTone(symptom)} label={symptom.category} className="max-w-[130px]" />
                     {symptom.summary ? <span className="font-medium">{symptom.summary}</span> : null}
                     {symptom.actionHint ? <span className="text-muted-foreground">{symptom.actionHint}</span> : null}
-                    {!symptom.summary && !symptom.actionHint ? <span className="text-muted-foreground">-</span> : null}
+                    {!symptom.summary && !symptom.actionHint ? <span className="text-muted-foreground">–</span> : null}
                   </div>
                 </td>
                 <td className="px-3 py-2 text-[13px] leading-[18px]">

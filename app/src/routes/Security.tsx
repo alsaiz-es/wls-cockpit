@@ -26,7 +26,7 @@ import { detailReturnState } from './detail-return-state'
 import { lockoutClearServers, lockoutRowTone } from './security-model'
 
 function formatCount(value: number | null) {
-  return value === null ? '-' : value.toLocaleString()
+  return value === null ? '–' : value.toLocaleString()
 }
 
 function ClearResults({ userName, results }: { userName: string; results: ClearLockoutResult[] }) {

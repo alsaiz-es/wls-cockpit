@@ -213,7 +213,7 @@ export function ActionAudit() {
             <p className="mt-1 whitespace-pre-wrap break-words font-mono text-[12px]">{row.errorSummary}</p>
           </details>
         ) : (
-          <span className="text-muted-foreground">-</span>
+          <span className="text-muted-foreground">–</span>
         ),
     },
   ]

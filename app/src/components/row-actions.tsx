@@ -35,13 +35,11 @@ export function RowActions({ primary, more, moreLabel, disabled = false }: RowAc
       {primary ? (
         <Button
           type="button"
-          variant={primary.destructive ? 'outline' : 'secondary'}
+          // A destructive primary (Stop, Shutdown) looks like any other row action: a domain with
+          // dozens of applications would otherwise show a red button on every row. The red goes on
+          // the confirmation, which names exactly what stops.
+          variant="secondary"
           size="xs"
-          className={
-            primary.destructive
-              ? 'border-status-negative/60 text-status-negative hover:bg-status-negative/10 hover:text-status-negative dark:border-status-negative/60'
-              : undefined
-          }
           disabled={disabled}
           aria-label={primary.ariaLabel}
           onClick={primary.onSelect}
