@@ -119,7 +119,10 @@ export function DataTable<T>({
                       active ? (sort.direction === 'asc' ? 'ascending' : 'descending') : undefined
                     }
                     className={cn(
-                      'text-muted-foreground whitespace-nowrap px-3 text-[13px] font-medium uppercase leading-[18px] tracking-[0.04em]',
+                      'text-muted-foreground px-3 text-[13px] font-medium uppercase leading-[18px] tracking-[0.04em]',
+                      // A sortable header sits in a truncating button, so it must not be squeezed;
+                      // a plain header may wrap to keep a narrow panel table inside its card.
+                      column.sortable && onSortChange && 'whitespace-nowrap',
                       alignClass(column.align),
                       column.sticky === 'right' && STICKY_RIGHT_CLASS,
                       column.headerClassName,
