@@ -510,6 +510,10 @@ even when the empty or error state is rare. **No surprise blank screens.**
   (*"Configure managed servers in the WebLogic admin console."*).
 - Optional primary action button.
 - No illustrations. No big icons. Maybe one 24 px icon if it disambiguates.
+- Idle is not empty and not unavailable. A view that waits for the operator
+  (metric capture before Start) shows one idle block that says what starts
+  it, not a grid of empty charts. "Unavailable" is only for data WebLogic
+  does not provide.
 
 ### 9.3 Error
 

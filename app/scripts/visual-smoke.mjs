@@ -2042,8 +2042,8 @@ async function runServerMetricsSmoke(session, creds) {
   await waitForExpectedText(
     session,
     'server-metrics-live',
-    ['AdminServer', 'Metric Capture', 'Start', 'Process CPU', 'Heap Utilization', 'Threads', 'JDBC Pools', 'JMS Destinations'],
-    ['Coming soon', 'Request failed', 'Server not found'],
+    ['AdminServer', 'Metric Capture', 'Start', 'Capture is idle.'],
+    ['Coming soon', 'Request failed', 'Server not found', 'Unavailable'],
   )
 
   await installDownloadCapture(session)
@@ -2052,6 +2052,12 @@ async function runServerMetricsSmoke(session, creds) {
     const body = await session.evaluate('document.body.innerText')
     return /Status\s+active/i.test(body) && /Samples\s+[1-9][0-9]*/i.test(body) ? body : null
   }, 30_000)
+  await waitForExpectedText(
+    session,
+    'server-metrics-live-charts',
+    ['Process CPU', 'Heap Utilization', 'Threads', 'JDBC Pools', 'JMS Destinations'],
+    ['Request failed'],
+  )
 
   await pushSpaRoute(session, 'server-metrics-live-away', '/dashboard')
   await waitForExpectedText(

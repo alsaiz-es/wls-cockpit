@@ -427,6 +427,15 @@ export function ServerMetricsTab({ serverName, creds, fixtureName = null }: Serv
         setIncludeRawTarget={setIncludeRawTarget}
       />
 
+      {!session ? (
+        <div className="border-border text-muted-foreground flex min-h-24 flex-col items-center justify-center gap-1 border px-3 py-6 text-center text-[13px] leading-[18px]">
+          <span>Capture is idle.</span>
+          <span className="text-xs">
+            Start a capture to chart heap, CPU, threads, JDBC pools and JMS destinations. Nothing is polled until you do.
+          </span>
+        </div>
+      ) : (
+      <>
       <section>
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-[14px] font-medium leading-5">JVM</h2>
@@ -457,6 +466,8 @@ export function ServerMetricsTab({ serverName, creds, fixtureName = null }: Serv
 
       <ResourceRows title="JDBC Pools" family="jdbc" session={session} index={index} />
       <ResourceRows title="JMS Destinations" family="jms" session={session} index={index} />
+      </>
+      )}
     </div>
   )
 }
