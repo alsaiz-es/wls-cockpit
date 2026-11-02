@@ -20,7 +20,7 @@ import {
 } from '@/api/queries/logs'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { MonoText, PageHeader, RelativeTime, StatusBadge, type StatusTone } from '@/components'
+import { MonoText, PageHeader, StatusBadge, type StatusTone } from '@/components'
 import { cn } from '@/lib/utils'
 import { detailReturnPath } from './detail-return-state'
 import { buildTopLevelLogDetailFailures } from './log-detail-failures'
@@ -867,24 +867,18 @@ export function LogDetails() {
         title={serverName || 'Log Runtime'}
         subtitle="Single server log runtime snapshot."
         meta={
-          <div className="flex w-full items-center justify-between gap-3">
-            <span className="text-muted-foreground flex items-center gap-1 text-[13px] leading-[18px]">
-              Updated <RelativeTime value={updatedAt} />
-            </span>
-            <div className="flex items-center gap-2">
-              <Button type="button" variant="ghost" size="sm" asChild>
-                <Link to={returnPath}>
-                  <ArrowLeft className="size-3.5" strokeWidth={1.5} />
-                  Logs
-                </Link>
-              </Button>
-              <Button type="button" variant="ghost" size="sm" onClick={refetchAll}>
-                <RefreshCw className="size-3.5" strokeWidth={1.5} />
-                Refresh
-              </Button>
-            </div>
-          </div>
+          <>
+            <Button type="button" variant="ghost" size="sm" className="-ml-2" asChild>
+              <Link to={returnPath}>
+                <ArrowLeft className="size-3.5" strokeWidth={1.5} />
+                Logs
+              </Link>
+            </Button>
+          </>
         }
+        updatedAt={updatedAt}
+        refreshing={query.isFetching || detailQuery.isFetching}
+        onRefresh={refetchAll}
       />
 
       <PartialBanner failures={failures} onRetry={refetchAll} />

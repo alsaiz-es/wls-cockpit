@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
-import { Loader2, PackagePlus, RefreshCw, Search } from 'lucide-react'
+import { Loader2, Plus, Search } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { readOnlyDemoModeEnabled } from '@/api/runtime-config'
 import {
@@ -36,7 +36,6 @@ import {
   MetricTrend,
   MonoText,
   PageHeader,
-  RelativeTime,
   StatusBadge,
   type DataTableColumn,
   type DataTableSort,
@@ -1152,33 +1151,24 @@ export function DataSources() {
       <PageHeader
         title="Data Sources"
         subtitle="JDBC pool status and connectivity."
-        meta={
-          <div className="flex w-full flex-wrap items-center justify-between gap-3">
-            <span className="text-muted-foreground flex items-center gap-1 text-[13px] leading-[18px]">
-              Updated <RelativeTime value={query.dataUpdatedAt} />
-            </span>
-            <div className="flex items-center gap-2">
-              {!readOnlyDemoMode ? (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => {
-                    setCreateFormErrors({})
-                    setShowCreateForm((value) => !value)
-                  }}
-                >
-                  <PackagePlus className="size-3.5" strokeWidth={1.5} />
-                  Create
-                </Button>
-              ) : null}
-              <Button type="button" variant="ghost" size="sm" onClick={() => void query.refetch()}>
-                <RefreshCw className="size-3.5" strokeWidth={1.5} />
-                Refresh
-              </Button>
-            </div>
-          </div>
+        action={
+          !readOnlyDemoMode ? (
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => {
+                setCreateFormErrors({})
+                setShowCreateForm((value) => !value)
+              }}
+            >
+              <Plus className="size-3.5" strokeWidth={1.5} />
+              Create data source
+            </Button>
+          ) : null
         }
+        updatedAt={query.dataUpdatedAt}
+        refreshing={query.isFetching}
+        onRefresh={() => void query.refetch()}
       />
 
       <ConfirmDialog

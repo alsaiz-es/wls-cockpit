@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Loader2, Plus, RadioTower, RefreshCw, Settings2, Shuffle } from 'lucide-react'
+import { Loader2, Plus, RadioTower, Settings2, Shuffle } from 'lucide-react'
 import {
   assignNodeManagerServers,
   createNodeManagerMachine,
@@ -37,7 +37,6 @@ import {
   DataTable,
   MonoText,
   PageHeader,
-  RelativeTime,
   StatusBadge,
   type DataTableColumn,
 } from '@/components'
@@ -550,48 +549,37 @@ export function NodeManager() {
         title="Node Manager"
         subtitle="Machine reachability, listener metadata, and managed-server mapping."
         action={
-          <div className="flex items-center gap-2">
-            {!readOnlyDemoMode && snapshot?.status === 'supported' ? (
-              <>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  disabled={mutationPending}
-                  onClick={() => {
-                    setListenerEditor({ mode: 'create', machineName: '', draft: emptyListenerDraft() })
-                    setAssignmentEditorOpen(false)
-                  }}
-                >
-                  <Plus className="size-4" strokeWidth={1.5} />
-                  Create machine
-                </Button>
-                <Button type="button" variant="outline" size="sm" disabled={mutationPending} onClick={openAssignmentEditor}>
-                  <Shuffle className="size-4" strokeWidth={1.5} />
-                  Assign servers
-                </Button>
-              </>
-            ) : null}
-            <Button type="button" variant="outline" size="sm" onClick={() => query.refetch()} disabled={query.isFetching}>
-              <RefreshCw className="size-4" strokeWidth={1.5} />
-              Refresh
-            </Button>
-          </div>
+          !readOnlyDemoMode && snapshot?.status === 'supported' ? (
+            <>
+              <Button type="button" variant="ghost" size="sm" disabled={mutationPending} onClick={openAssignmentEditor}>
+                <Shuffle className="size-3.5" strokeWidth={1.5} />
+                Assign servers
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                disabled={mutationPending}
+                onClick={() => {
+                  setListenerEditor({ mode: 'create', machineName: '', draft: emptyListenerDraft() })
+                  setAssignmentEditorOpen(false)
+                }}
+              >
+                <Plus className="size-3.5" strokeWidth={1.5} />
+                Create machine
+              </Button>
+            </>
+          ) : null
         }
         meta={
-          <div className="flex min-w-0 flex-wrap items-center gap-2">
-            {snapshot?.status === 'supported' ? (
-              <span className="text-muted-foreground text-[13px] leading-[18px]">
-                {rows.length.toLocaleString()} machines
-              </span>
-            ) : null}
-            {query.dataUpdatedAt ? (
-              <span className="text-muted-foreground text-[13px] leading-[18px]">
-                Updated <RelativeTime value={query.dataUpdatedAt} />
-              </span>
-            ) : null}
-          </div>
+          snapshot?.status === 'supported' ? (
+            <span className="text-muted-foreground text-[13px] leading-[18px]">
+              {rows.length.toLocaleString()} {rows.length === 1 ? 'machine' : 'machines'}
+            </span>
+          ) : null
         }
+        updatedAt={query.dataUpdatedAt}
+        refreshing={query.isFetching}
+        onRefresh={() => void query.refetch()}
       />
 
       {snapshot?.status === 'unsupported' ? <UnsupportedPanel reason={snapshot.unsupportedReason} /> : null}

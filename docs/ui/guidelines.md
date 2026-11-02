@@ -149,8 +149,15 @@ a page header inside a `Card`.** Just plain divs.
 
 - Page title: 18 px, weight 600.
 - Subtitle: 13 px, muted color, single line. Optional.
-- Primary action: top-right, single button. If there are several actions,
-  group them or move secondary ones into a `…` menu.
+- Primary action: top-right, single button in the primary variant. Secondary
+  actions sit to its left as ghost buttons; if there are many, move them into
+  a `…` menu.
+- Second row (`PageHeader` `meta`, `updatedAt`, `refreshing`, `onRefresh`):
+  page-level toggles and counts on the left; on the right, always in this
+  order, `Updated <relative time>`, the refetch spinner, and one ghost
+  `Refresh`. One Refresh per screen. Detail pages put the `← <list>` link
+  first on the left: it returns to the list with the filters and sort the
+  operator left there, which the breadcrumb does not.
 - 16 px gap between header block and the next element.
 
 ## 5. Typography
@@ -489,9 +496,10 @@ even when the empty or error state is rare. **No surprise blank screens.**
   label, no skeleton. The spinner stays in place until first response.
   Layout reserves the space the table will eventually occupy (so nothing
   shifts).
-- **Refetch over existing data**: do not blank the table. Show the
-  spinner only and dim the data slightly (`opacity: 0.7`) for as long as
-  the request takes. Replace data when it arrives.
+- **Refetch over existing data**: do not blank the table. Dim the data
+  slightly (`opacity: 0.7`) for as long as the request takes and show the
+  spinner next to `Updated` in the page header, never over the table, where
+  it would cover row actions. Replace data when it arrives.
 
 ### 9.2 Empty
 

@@ -758,17 +758,9 @@ export function Logs() {
       <PageHeader
         title="Logs"
         subtitle="Server log runtime signals."
-        meta={
-          <div className="flex w-full items-center justify-between gap-3">
-            <span className="text-muted-foreground flex items-center gap-1 text-[13px] leading-[18px]">
-              Updated <RelativeTime value={query.dataUpdatedAt} />
-            </span>
-            <Button type="button" variant="ghost" size="sm" onClick={() => void query.refetch()}>
-              <RefreshCw className="size-3.5" strokeWidth={1.5} />
-              Refresh
-            </Button>
-          </div>
-        }
+        updatedAt={query.dataUpdatedAt}
+        refreshing={query.isFetching}
+        onRefresh={() => void query.refetch()}
       />
 
       <PartialBanner failures={failures} onRetry={() => void query.refetch()} />

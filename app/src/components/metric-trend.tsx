@@ -33,7 +33,10 @@ function pointFor(sample: MetricHistorySample, index: number, samples: MetricHis
   const x = samples.length <= 1
     ? SPARKLINE_PADDING
     : SPARKLINE_PADDING + (availableWidth * index) / (samples.length - 1)
-  const y = SPARKLINE_PADDING + availableHeight - ((sample.value - min) / range) * availableHeight
+  // A flat series sits at mid-height; at the bottom it reads as an underline.
+  const y = range === 0
+    ? SPARKLINE_PADDING + availableHeight / 2
+    : SPARKLINE_PADDING + availableHeight - ((sample.value - min) / range) * availableHeight
   return `${x.toFixed(1)},${y.toFixed(1)}`
 }
 
@@ -57,7 +60,7 @@ export function MetricSparkline({ samples, className }: { samples: MetricHistory
   const values = samples.map((sample) => sample.value)
   const min = Math.min(...values)
   const max = Math.max(...values)
-  const range = max === min ? 1 : max - min
+  const range = max - min
   const segments = sparklineSegments(samples)
 
   return (

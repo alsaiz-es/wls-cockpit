@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
-import { ChevronDown, ChevronRight, Folder, Network, RefreshCw, Search } from 'lucide-react'
+import { ChevronDown, ChevronRight, Folder, Network, Search } from 'lucide-react'
 import {
   displayJndiPath,
   useJndiSnapshot,
@@ -12,7 +12,6 @@ import { useAuth } from '@/auth/useAuth'
 import {
   MonoText,
   PageHeader,
-  RelativeTime,
   StatusBadge,
   lifecycleTone,
 } from '@/components'
@@ -230,17 +229,9 @@ export function Jndi() {
       <PageHeader
         title="JNDI"
         subtitle="Read-only server-scoped JNDI bindings and class metadata."
-        meta={
-          <div className="flex w-full items-center justify-between gap-3">
-            <span className="text-muted-foreground flex items-center gap-1 text-[13px] leading-[18px]">
-              Updated <RelativeTime value={Math.max(serversQuery.dataUpdatedAt, jndiQuery.dataUpdatedAt)} />
-            </span>
-            <Button type="button" variant="ghost" size="sm" onClick={() => void Promise.all([serversQuery.refetch(), jndiQuery.refetch()])}>
-              <RefreshCw className="size-3.5" strokeWidth={1.5} />
-              Refresh
-            </Button>
-          </div>
-        }
+        updatedAt={Math.max(serversQuery.dataUpdatedAt, jndiQuery.dataUpdatedAt)}
+        refreshing={serversQuery.isFetching || jndiQuery.isFetching}
+        onRefresh={() => void Promise.all([serversQuery.refetch(), jndiQuery.refetch()])}
       />
 
       <PartialBanner failures={failures} onRetry={() => void jndiQuery.refetch()} />

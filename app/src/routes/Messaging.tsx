@@ -1,5 +1,4 @@
 import { useMemo } from 'react'
-import { RefreshCw } from 'lucide-react'
 import {
   safEndpointFailing,
   useMessagingInfrastructure,
@@ -12,7 +11,6 @@ import {
   DataTable,
   MonoText,
   PageHeader,
-  RelativeTime,
   StatusBadge,
   type DataTableColumn,
   type StatusTone,
@@ -191,17 +189,9 @@ export function Messaging() {
       <PageHeader
         title="Stores & SAF"
         subtitle="Persistent stores, store-and-forward agents and messaging bridges on running servers."
-        meta={
-          <div className="flex w-full items-center justify-between gap-3">
-            <span className="text-muted-foreground flex items-center gap-1 text-[13px] leading-[18px]">
-              Updated <RelativeTime value={query.dataUpdatedAt} />
-            </span>
-            <Button type="button" variant="ghost" size="sm" onClick={() => void query.refetch()}>
-              <RefreshCw className="size-3.5" strokeWidth={1.5} />
-              Refresh
-            </Button>
-          </div>
-        }
+        updatedAt={query.dataUpdatedAt}
+        refreshing={query.isFetching}
+        onRefresh={() => void query.refetch()}
       />
 
       {failures.length > 0 ? (

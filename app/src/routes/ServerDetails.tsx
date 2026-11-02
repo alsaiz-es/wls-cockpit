@@ -1673,55 +1673,46 @@ export function ServerDetails() {
       <PageHeader
         title={serverName || 'Server'}
         subtitle="Single server runtime snapshot."
-        meta={
-          <div className="flex w-full items-center justify-between gap-3">
-            <span className="text-muted-foreground flex items-center gap-1 text-[13px] leading-[18px]">
-              Updated <RelativeTime value={Math.max(query.dataUpdatedAt, taskQuery.dataUpdatedAt)} />
-            </span>
-            <div className="flex items-center gap-2">
-              <Button type="button" variant="ghost" size="sm" asChild>
-                <Link to={returnPath}>
-                  <ArrowLeft className="size-3.5" strokeWidth={1.5} />
-                  Servers
-                </Link>
-              </Button>
-              <Button type="button" variant="ghost" size="sm" asChild>
-                <Link to={workManagersRouteForServer(serverName)}>
-                  <Workflow className="size-3.5" strokeWidth={1.5} />
-                  Work Managers
-                </Link>
-              </Button>
-              {canCaptureThreadDump ? (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  disabled={threadDumpMutation.isPending}
-                  onClick={captureThreadDump}
-                >
-                  {threadDumpMutation.isPending ? (
-                    <Loader2 className="size-3.5 animate-spin" strokeWidth={1.5} />
-                  ) : (
-                    <FileText className="size-3.5" strokeWidth={1.5} />
-                  )}
-                  {threadDumpMutation.isPending ? 'Capturing' : 'Thread dump'}
-                </Button>
-              ) : null}
+        action={
+          <>
+            <Button type="button" variant="ghost" size="sm" asChild>
+              <Link to={workManagersRouteForServer(serverName)}>
+                <Workflow className="size-3.5" strokeWidth={1.5} />
+                Work Managers
+              </Link>
+            </Button>
+            {canCaptureThreadDump ? (
               <Button
                 type="button"
-                variant="ghost"
+                variant="secondary"
                 size="sm"
-                onClick={() => {
-                  void query.refetch()
-                  if (row) void taskQuery.refetch()
-                }}
+                disabled={threadDumpMutation.isPending}
+                onClick={captureThreadDump}
               >
-                <RefreshCw className="size-3.5" strokeWidth={1.5} />
-                Refresh
+                {threadDumpMutation.isPending ? (
+                  <Loader2 className="size-3.5 animate-spin" strokeWidth={1.5} />
+                ) : (
+                  <FileText className="size-3.5" strokeWidth={1.5} />
+                )}
+                {threadDumpMutation.isPending ? 'Capturing' : 'Thread dump'}
               </Button>
-            </div>
-          </div>
+            ) : null}
+          </>
         }
+        meta={
+          <Button type="button" variant="ghost" size="sm" className="-ml-2" asChild>
+            <Link to={returnPath}>
+              <ArrowLeft className="size-3.5" strokeWidth={1.5} />
+              Servers
+            </Link>
+          </Button>
+        }
+        updatedAt={Math.max(query.dataUpdatedAt, taskQuery.dataUpdatedAt)}
+        refreshing={query.isFetching || taskQuery.isFetching}
+        onRefresh={() => {
+          void query.refetch()
+          if (row) void taskQuery.refetch()
+        }}
       />
 
       <ConfirmDialog

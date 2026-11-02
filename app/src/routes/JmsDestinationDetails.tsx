@@ -10,7 +10,6 @@ import {
   ConfirmDialog,
   MonoText,
   PageHeader,
-  RelativeTime,
   StatusBadge,
   type StatusTone,
 } from '@/components'
@@ -1047,24 +1046,18 @@ export function JmsDestinationDetails() {
         title={destinationName || 'JMS Destination'}
         subtitle="Single JMS destination runtime snapshot."
         meta={
-          <div className="flex w-full items-center justify-between gap-3">
-            <span className="text-muted-foreground flex items-center gap-1 text-[13px] leading-[18px]">
-              Updated <RelativeTime value={query.dataUpdatedAt} />
-            </span>
-            <div className="flex items-center gap-2">
-              <Button type="button" variant="ghost" size="sm" asChild>
-                <Link to={returnPath}>
-                  <ArrowLeft className="size-3.5" strokeWidth={1.5} />
-                  JMS
-                </Link>
-              </Button>
-              <Button type="button" variant="ghost" size="sm" onClick={refetchAll}>
-                <RefreshCw className="size-3.5" strokeWidth={1.5} />
-                Refresh
-              </Button>
-            </div>
-          </div>
+          <>
+            <Button type="button" variant="ghost" size="sm" className="-ml-2" asChild>
+              <Link to={returnPath}>
+                <ArrowLeft className="size-3.5" strokeWidth={1.5} />
+                JMS
+              </Link>
+            </Button>
+          </>
         }
+        updatedAt={query.dataUpdatedAt}
+        refreshing={query.isFetching}
+        onRefresh={refetchAll}
       />
 
       <PartialBanner failures={failures} onRetry={refetchAll} />

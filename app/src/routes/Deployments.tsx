@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
-import { ChevronDown, ChevronRight, CornerDownRight, List, Loader2, PackagePlus, RefreshCw, Search, Table2 } from 'lucide-react'
+import { ChevronDown, ChevronRight, CornerDownRight, List, Loader2, PackagePlus, Search, Table2 } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { readOnlyDemoModeEnabled } from '@/api/runtime-config'
 import {
@@ -45,7 +45,6 @@ import {
   DataTable,
   MonoText,
   PageHeader,
-  RelativeTime,
   StatusBadge,
   type DataTableColumn,
   type DataTableSort,
@@ -1031,54 +1030,50 @@ export function Deployments() {
       <PageHeader
         title="Deployments"
         subtitle="Applications and deployment state."
+        action={
+          !readOnlyDemoMode ? (
+            <Button type="button" size="sm" onClick={() => setShowDeployForm((value) => !value)}>
+              <PackagePlus className="size-3.5" strokeWidth={1.5} />
+              Deploy
+            </Button>
+          ) : null
+        }
         meta={
-          <div className="flex w-full flex-wrap items-center justify-between gap-3">
-            <span className="text-muted-foreground flex items-center gap-1 text-[13px] leading-[18px]">
-              Updated <RelativeTime value={query.dataUpdatedAt} />
-            </span>
-            <div className="flex items-center gap-3">
-              <div className="border-border bg-background flex h-8 items-center border">
-                <Button
-                  type="button"
-                  variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('list')}
-                >
-                  <List className="size-3.5" strokeWidth={1.5} />
-                  List
-                </Button>
-                <Button
-                  type="button"
-                  variant={viewMode === 'matrix' ? 'secondary' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('matrix')}
-                >
-                  <Table2 className="size-3.5" strokeWidth={1.5} />
-                  Matrix
-                </Button>
-              </div>
-              {!readOnlyDemoMode ? (
-                <Button type="button" variant="secondary" size="sm" onClick={() => setShowDeployForm((value) => !value)}>
-                  <PackagePlus className="size-3.5" strokeWidth={1.5} />
-                  Deploy
-                </Button>
-              ) : null}
-              <label className="text-muted-foreground hover:text-foreground flex h-8 items-center gap-2 text-[13px] leading-[18px]">
-                <input
-                  type="checkbox"
-                  className="accent-primary size-3.5"
-                  checked={hideInternal}
-                  onChange={(event) => updateTableState({ filters: { hideInternal: event.target.checked } })}
-                />
-                Hide internal
-              </label>
-              <Button type="button" variant="ghost" size="sm" onClick={() => void query.refetch()}>
-                <RefreshCw className="size-3.5" strokeWidth={1.5} />
-                Refresh
+          <>
+            <div className="border-border bg-background flex h-8 items-center border">
+              <Button
+                type="button"
+                variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+              >
+                <List className="size-3.5" strokeWidth={1.5} />
+                List
+              </Button>
+              <Button
+                type="button"
+                variant={viewMode === 'matrix' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('matrix')}
+              >
+                <Table2 className="size-3.5" strokeWidth={1.5} />
+                Matrix
               </Button>
             </div>
-          </div>
+            <label className="text-muted-foreground hover:text-foreground flex h-8 items-center gap-2 text-[13px] leading-[18px]">
+              <input
+                type="checkbox"
+                className="accent-primary size-3.5"
+                checked={hideInternal}
+                onChange={(event) => updateTableState({ filters: { hideInternal: event.target.checked } })}
+              />
+              Hide internal
+            </label>
+          </>
         }
+        updatedAt={query.dataUpdatedAt}
+        refreshing={query.isFetching}
+        onRefresh={() => void query.refetch()}
       />
 
       <ConfirmDialog

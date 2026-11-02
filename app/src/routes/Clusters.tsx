@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom'
-import { Loader2, Network, Pencil, Plus, RefreshCw, Save, Search, Trash2, X } from 'lucide-react'
+import { ArrowLeft, Loader2, Network, Pencil, Plus, RefreshCw, Save, Search, Trash2, X } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { readOnlyDemoModeEnabled } from '@/api/runtime-config'
 import {
@@ -1133,12 +1133,11 @@ export function Clusters() {
                 Create cluster
               </Button>
             ) : null}
-            <Button type="button" variant="outline" size="sm" onClick={() => query.refetch()} disabled={query.isFetching}>
-              <RefreshCw className="size-4" strokeWidth={1.5} />
-              Refresh
-            </Button>
           </div>
         }
+        updatedAt={query.dataUpdatedAt}
+        refreshing={query.isFetching}
+        onRefresh={() => void query.refetch()}
         meta={
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <div className="relative w-[320px] max-w-full">
@@ -1153,11 +1152,6 @@ export function Clusters() {
             <span className="text-muted-foreground text-[13px] leading-[18px]">
               {rows.length.toLocaleString()} of {allRows.length.toLocaleString()} clusters
             </span>
-            {query.dataUpdatedAt ? (
-              <span className="text-muted-foreground text-[13px] leading-[18px]">
-                Updated <RelativeTime value={query.dataUpdatedAt} />
-              </span>
-            ) : null}
           </div>
         }
       />
@@ -1476,31 +1470,21 @@ export function ClusterDetails() {
       <PageHeader
         title={row.name}
         subtitle="Cluster runtime detail and member health."
-        action={
-          <>
-            <Button asChild variant="outline" size="sm">
-              <Link to={returnPath}>
-                <Network className="size-4" strokeWidth={1.5} />
-                Back
-              </Link>
-            </Button>
-            <Button type="button" variant="outline" size="sm" onClick={() => query.refetch()} disabled={query.isFetching}>
-              <RefreshCw className="size-4" strokeWidth={1.5} />
-              Refresh
-            </Button>
-          </>
-        }
         meta={
           <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <Button asChild variant="ghost" size="sm" className="-ml-2">
+              <Link to={returnPath}>
+                <ArrowLeft className="size-3.5" strokeWidth={1.5} />
+                Clusters
+              </Link>
+            </Button>
             <StatusBadge kind="wls-health" value={row.healthState} />
             <MonoText className="text-muted-foreground">{stateSummary(row)}</MonoText>
-            {query.dataUpdatedAt ? (
-              <span className="text-muted-foreground text-[13px] leading-[18px]">
-                Updated <RelativeTime value={query.dataUpdatedAt} />
-              </span>
-            ) : null}
           </div>
         }
+        updatedAt={query.dataUpdatedAt}
+        refreshing={query.isFetching}
+        onRefresh={() => void query.refetch()}
       />
 
       <ConfirmDialog

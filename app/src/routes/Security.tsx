@@ -1,7 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link, useLocation } from 'react-router-dom'
-import { RefreshCw, UserRoundCheck } from 'lucide-react'
+import { UserRoundCheck } from 'lucide-react'
 import { useAuth } from '@/auth/useAuth'
 import { readOnlyDemoModeEnabled } from '@/api/runtime-config'
 import {
@@ -17,7 +17,6 @@ import {
   DataTable,
   MonoText,
   PageHeader,
-  RelativeTime,
   StatusBadge,
   type DataTableColumn,
 } from '@/components'
@@ -204,23 +203,15 @@ export function Security() {
         title="Security"
         subtitle="User lockout per server, counted since each server started."
         meta={
-          <div className="flex w-full items-center justify-between gap-3">
-            <span className="text-muted-foreground flex items-center gap-2 text-[13px] leading-[18px]">
-              {locked > 0 ? (
-                <StatusBadge kind="custom" tone="warning" label={`${locked} locked`} />
-              ) : query.data ? (
-                <StatusBadge kind="custom" tone="positive" label="No locked users" />
-              ) : null}
-              <span>
-                Updated <RelativeTime value={query.dataUpdatedAt} />
-              </span>
-            </span>
-            <Button type="button" variant="ghost" size="sm" onClick={() => void query.refetch()}>
-              <RefreshCw className="size-3.5" strokeWidth={1.5} />
-              Refresh
-            </Button>
-          </div>
+          locked > 0 ? (
+            <StatusBadge kind="custom" tone="warning" label={`${locked} locked`} />
+          ) : query.data ? (
+            <StatusBadge kind="custom" tone="positive" label="No locked users" />
+          ) : null
         }
+        updatedAt={query.dataUpdatedAt}
+        refreshing={query.isFetching}
+        onRefresh={() => void query.refetch()}
       />
 
       <DataTable

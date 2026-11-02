@@ -104,13 +104,7 @@ export function DataTable<T>({
           ) : null}
         </div>
       ) : null}
-      <div className="relative overflow-auto border-b border-border">
-        {loading && rows.length > 0 ? (
-          <div className="pointer-events-none absolute bottom-1 right-2 z-20 flex items-center gap-2 text-muted-foreground">
-            <Loader2 className="size-3 animate-spin" strokeWidth={1.5} />
-            <span className="text-xs">Loading…</span>
-          </div>
-        ) : null}
+      <div className="overflow-auto border-b border-border">
         <table className="w-full min-w-[720px] border-collapse tabular-nums">
           <thead className="sticky top-0 z-10 bg-background">
             <tr className="h-9 border-b border-border">

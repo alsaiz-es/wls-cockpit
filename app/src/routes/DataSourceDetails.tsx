@@ -1,5 +1,5 @@
 import { Link, useLocation, useParams } from 'react-router-dom'
-import { ArrowLeft, Loader2, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Loader2 } from 'lucide-react'
 import { useCallback, useMemo } from 'react'
 import { readOnlyDemoModeEnabled } from '@/api/runtime-config'
 import {
@@ -9,7 +9,7 @@ import {
 } from '@/api/queries/data-sources'
 import { deploymentTargetLabel } from '@/api/queries/deployment-targets'
 import { Button } from '@/components/ui/button'
-import { MonoText, PageHeader, RelativeTime, StatusBadge, type StatusTone } from '@/components'
+import { MonoText, PageHeader, StatusBadge, type StatusTone } from '@/components'
 import { detailReturnPath } from './detail-return-state'
 import { demoSensitiveValue } from './demo-readonly-values'
 import { routeParam } from './route-params'
@@ -166,24 +166,18 @@ export function DataSourceDetails() {
         title={dataSourceName || 'Data Source'}
         subtitle="Single JDBC datasource runtime snapshot."
         meta={
-          <div className="flex w-full items-center justify-between gap-3">
-            <span className="text-muted-foreground flex items-center gap-1 text-[13px] leading-[18px]">
-              Updated <RelativeTime value={query.dataUpdatedAt} />
-            </span>
-            <div className="flex items-center gap-2">
-              <Button type="button" variant="ghost" size="sm" asChild>
-                <Link to={returnPath}>
-                  <ArrowLeft className="size-3.5" strokeWidth={1.5} />
-                  Data Sources
-                </Link>
-              </Button>
-              <Button type="button" variant="ghost" size="sm" onClick={refetchAll}>
-                <RefreshCw className="size-3.5" strokeWidth={1.5} />
-                Refresh
-              </Button>
-            </div>
-          </div>
+          <>
+            <Button type="button" variant="ghost" size="sm" className="-ml-2" asChild>
+              <Link to={returnPath}>
+                <ArrowLeft className="size-3.5" strokeWidth={1.5} />
+                Data Sources
+              </Link>
+            </Button>
+          </>
         }
+        updatedAt={query.dataUpdatedAt}
+        refreshing={query.isFetching}
+        onRefresh={refetchAll}
       />
 
       <PartialBanner failures={failures} onRetry={refetchAll} />

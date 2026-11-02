@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
-import { Loader2, Plus, RefreshCw, Search } from 'lucide-react'
+import { Loader2, Plus, Search } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { type WlsCredentials } from '@/api/client'
 import { readOnlyDemoModeEnabled } from '@/api/runtime-config'
@@ -31,7 +31,6 @@ import {
   MetricTrend,
   MonoText,
   PageHeader,
-  RelativeTime,
   RestartRequiredBadge,
   StatusBadge,
   type DataTableColumn,
@@ -964,17 +963,9 @@ export function Servers() {
             </Button>
           ) : null
         }
-        meta={
-          <div className="flex w-full items-center justify-between gap-3">
-            <span className="text-muted-foreground flex items-center gap-1 text-[13px] leading-[18px]">
-              Updated <RelativeTime value={query.dataUpdatedAt} />
-            </span>
-            <Button type="button" variant="ghost" size="sm" onClick={() => void query.refetch()}>
-              <RefreshCw className="size-3.5" strokeWidth={1.5} />
-              Refresh
-            </Button>
-          </div>
-        }
+        updatedAt={query.dataUpdatedAt}
+        refreshing={query.isFetching}
+        onRefresh={() => void query.refetch()}
       />
 
       <ConfirmDialog

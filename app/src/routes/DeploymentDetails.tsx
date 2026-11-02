@@ -29,7 +29,7 @@ import {
   type DeploymentWebModuleAdvancedMetadata,
 } from '@/api/queries/deployment-web-modules'
 import { Button } from '@/components/ui/button'
-import { MonoText, PageHeader, RelativeTime, StatusBadge, type StatusTone } from '@/components'
+import { MonoText, PageHeader, StatusBadge, type StatusTone } from '@/components'
 import { detailReturnPath } from './detail-return-state'
 import { demoSensitiveValue } from './demo-readonly-values'
 import { routeParam } from './route-params'
@@ -806,24 +806,18 @@ export function DeploymentDetails() {
         title={row?.name ?? (deploymentName || 'Deployment')}
         subtitle="Single application runtime snapshot."
         meta={
-          <div className="flex w-full items-center justify-between gap-3">
-            <span className="text-muted-foreground flex items-center gap-1 text-[13px] leading-[18px]">
-              Updated <RelativeTime value={query.dataUpdatedAt} />
-            </span>
-            <div className="flex items-center gap-2">
-              <Button type="button" variant="ghost" size="sm" asChild>
-                <Link to={returnPath}>
-                  <ArrowLeft className="size-3.5" strokeWidth={1.5} />
-                  Deployments
-                </Link>
-              </Button>
-              <Button type="button" variant="ghost" size="sm" onClick={() => void refreshDetails()}>
-                <RefreshCw className="size-3.5" strokeWidth={1.5} />
-                Refresh
-              </Button>
-            </div>
-          </div>
+          <>
+            <Button type="button" variant="ghost" size="sm" className="-ml-2" asChild>
+              <Link to={returnPath}>
+                <ArrowLeft className="size-3.5" strokeWidth={1.5} />
+                Deployments
+              </Link>
+            </Button>
+          </>
         }
+        updatedAt={query.dataUpdatedAt}
+        refreshing={query.isFetching}
+        onRefresh={() => void refreshDetails()}
       />
 
       <PartialBanner failures={failures} onRetry={() => void query.refetch()} />
