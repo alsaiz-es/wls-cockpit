@@ -1,0 +1,140 @@
+# Release: runs on tags v*. Publishes app/ to npm as `wls-cockpit` and attaches portable
+# archives to a GitHub Release.
+#
+# npm configuration (choose one):
+#   - Trusted publishing (preferred, no secret): on npmjs.com, package settings ->
+#     Trusted publisher -> GitHub Actions, organization `alsaiz-es`, repository
+#     `wls-cockpit`, workflow `release.yml`. Needs npm >= 11.5.1 (Node 24 below).
+#     npm sets this up from the package settings page, so the very first version has
+#     to be published with a token (next option) or by hand.
+#   - Token: create a granular npm access token with publish rights, store it as the
+#     repository secret NPM_TOKEN, and uncomment the NODE_AUTH_TOKEN line in the publish
+#     step. Remove the secret once trusted publishing is configured.
+#
+# Provenance requires a public repository, and package.json `repository.url` must match
+# this GitHub repository exactly (git+https://github.com/alsaiz-es/wls-cockpit.git).
+#
+# Portable archives bundle an official Node.js runtime from nodejs.org, verified against
+# its SHASUMS256.txt. The macOS archive is assembled here unsigned. The maintainer then
+# replaces it with a signed and notarized disk image from a Mac that holds the Developer ID
+# certificate (app/scripts/release-macos-portable.sh <tag>), so the signing key never leaves
+# that keychain.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  NODE_RUNTIME_VERSION: v24.22.2
+
+jobs:
+  npm:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          # No dependency cache in a publishing workflow (cache poisoning risk).
+          package-manager-cache: false
+
+      - name: Check tag matches package version
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [ "v${version}" != "${GITHUB_REF_NAME}" ]; then
+            echo "Tag ${GITHUB_REF_NAME} does not match package.json version ${version}" >&2
+            exit 1
+          fi
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run test:unit
+      - run: npx tsc -b --force
+      - run: npm run build
+
+      - run: npm publish --provenance --access public
+        # env:
+        #   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  github-release:
+    name: GitHub Release with portable archives
+    needs: npm
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Download Node.js runtimes
+        run: |
+          mkdir -p "$RUNNER_TEMP/node-runtimes"
+          cd "$RUNNER_TEMP/node-runtimes"
+          base="https://nodejs.org/dist/${NODE_RUNTIME_VERSION}"
+          curl -fsSLO "${base}/SHASUMS256.txt"
+          for file in \
+            "node-${NODE_RUNTIME_VERSION}-linux-x64.tar.xz" \
+            "node-${NODE_RUNTIME_VERSION}-win-x64.zip" \
+            "node-${NODE_RUNTIME_VERSION}-darwin-arm64.tar.xz"; do
+            curl -fsSLO "${base}/${file}"
+            grep " ${file}\$" SHASUMS256.txt | sha256sum -c -
+          done
+          tar -xJf "node-${NODE_RUNTIME_VERSION}-linux-x64.tar.xz"
+          tar -xJf "node-${NODE_RUNTIME_VERSION}-darwin-arm64.tar.xz"
+          unzip -q "node-${NODE_RUNTIME_VERSION}-win-x64.zip"
+
+      # WLS Cockpit.exe: the double-click launcher of the Windows archive (icon, no console).
+      - name: Build the Windows launcher
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq mingw-w64
+          node scripts/build-windows-launcher.mjs --out="$RUNNER_TEMP/WLS Cockpit.exe"
+
+      - name: Assemble portable archives
+        run: |
+          runtimes="$RUNNER_TEMP/node-runtimes"
+          version="${GITHUB_REF_NAME#v}"
+          mkdir -p "$RUNNER_TEMP/release"
+          for target in linux:x64:linux-x64 windows:x64:win-x64 macos:arm64:darwin-arm64; do
+            platform="${target%%:*}"
+            rest="${target#*:}"
+            arch="${rest%%:*}"
+            node_dist="${rest#*:}"
+            launcher=()
+            [ "${platform}" = windows ] && launcher=(--windows-launcher="$RUNNER_TEMP/WLS Cockpit.exe")
+            node scripts/package-portable.mjs \
+              --platform="${platform}" \
+              --arch="${arch}" \
+              --node-runtime-dir="${runtimes}/node-${NODE_RUNTIME_VERSION}-${node_dist}" \
+              "${launcher[@]}"
+            cp LICENSE "portable/wls-cockpit-${platform}-${arch}/LICENSE"
+            (cd portable && zip -qr "$RUNNER_TEMP/release/wls-cockpit-${version}-${platform}-${arch}.zip" "wls-cockpit-${platform}-${arch}")
+          done
+          ls -l "$RUNNER_TEMP/release"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" "$RUNNER_TEMP"/release/*.zip --verify-tag --generate-notes --title "$GITHUB_REF_NAME"

@@ -1,0 +1,30 @@
+// Icon and version details shown by Explorer. VERSION_NUMBER (a,b,c,0) and VERSION_TEXT ("a.b.c")
+// come from package.json through scripts/build-windows-launcher.mjs.
+#include <winver.h>
+
+1 ICON "../../assets/icons/wls-cockpit.ico"
+
+1 VERSIONINFO
+FILEVERSION VERSION_NUMBER
+PRODUCTVERSION VERSION_NUMBER
+FILEOS VOS_NT_WINDOWS32
+FILETYPE VFT_APP
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904B0"
+    BEGIN
+      VALUE "CompanyName", "WLS Cockpit contributors"
+      VALUE "FileDescription", "WLS Cockpit"
+      VALUE "FileVersion", VERSION_TEXT
+      VALUE "InternalName", "WLS Cockpit"
+      VALUE "OriginalFilename", "WLS Cockpit.exe"
+      VALUE "ProductName", "WLS Cockpit"
+      VALUE "ProductVersion", VERSION_TEXT
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x409, 1200
+  END
+END

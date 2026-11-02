@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WLS Cockpit</title>
+    <script>
+      ;(() => {
+        const key = 'wls-cockpit:theme-mode:v1'
+        const valid = new Set(['dark', 'light', 'system'])
+        let mode = 'dark'
+        try {
+          const stored = window.localStorage.getItem(key)
+          if (valid.has(stored)) mode = stored
+        } catch {
+          mode = 'dark'
+        }
+
+        let dark = mode !== 'light'
+        if (mode === 'system') {
+          try {
+            dark = window.matchMedia('(prefers-color-scheme: dark)').matches
+          } catch {
+            dark = true
+          }
+        }
+
+        document.documentElement.classList.toggle('dark', dark)
+        document.documentElement.dataset.themeMode = mode
+        document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

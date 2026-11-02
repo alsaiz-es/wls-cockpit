@@ -1,0 +1,86 @@
+{
+  "name": "wls-cockpit",
+  "version": "0.1.0",
+  "description": "Local operations cockpit for Oracle WebLogic Server, built on the WebLogic REST Management API.",
+  "keywords": [
+    "weblogic",
+    "wls",
+    "weblogic-server",
+    "remote-console",
+    "monitoring",
+    "jms",
+    "operations",
+    "openapi"
+  ],
+  "license": "Apache-2.0",
+  "author": "Alfredo Saiz",
+  "homepage": "https://github.com/alsaiz-es/wls-cockpit#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alsaiz-es/wls-cockpit.git",
+    "directory": "app"
+  },
+  "bugs": {
+    "url": "https://github.com/alsaiz-es/wls-cockpit/issues"
+  },
+  "type": "module",
+  "bin": {
+    "wls-cockpit": "./dist-server/wls-cockpit.mjs"
+  },
+  "files": [
+    "dist",
+    "dist-server",
+    "scripts/postinstall.mjs",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build && vite build --config vite.server.config.ts && node scripts/prepare-bin.mjs",
+    "lint": "eslint .",
+    "test:unit": "node --experimental-strip-types --test tests/*.test.ts",
+    "package:portable": "node scripts/package-portable.mjs",
+    "package:portable:linux": "node scripts/package-portable.mjs --platform=linux",
+    "package:portable:macos": "node scripts/package-portable.mjs --platform=macos",
+    "package:portable:windows": "node scripts/package-portable.mjs --platform=windows",
+    "capture:rest-delta": "node scripts/rest-version-delta-capture.mjs",
+    "smoke:visual": "node scripts/visual-smoke.mjs",
+    "smoke:visual:readonly": "WLS_SMOKE_PROFILE=readonly node scripts/visual-smoke.mjs",
+    "smoke:visual:lifecycle": "WLS_SMOKE_PROFILE=lifecycle node scripts/visual-smoke.mjs",
+    "preview": "vite preview",
+    "gen:14.1.2": "node -e \"require('node:fs').mkdirSync('src/api/generated',{recursive:true})\" && openapi-typescript ../openapi/wls-14.1.2.yaml -o src/api/generated/wls-14.1.2.d.ts",
+    "gen:12.2.1.4": "node -e \"require('node:fs').mkdirSync('src/api/generated',{recursive:true})\" && openapi-typescript ../openapi/wls-12.2.1.4.yaml -o src/api/generated/wls-12.2.1.4.d.ts",
+    "gen": "npm run gen:14.1.2 && npm run gen:12.2.1.4",
+    "postinstall": "node scripts/postinstall.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@tailwindcss/vite": "^4.2.4",
+    "@tanstack/react-query": "^5.100.6",
+    "@types/node": "^24.12.2",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "eslint": "^10.2.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.5.0",
+    "lucide-react": "^1.14.0",
+    "openapi-fetch": "^0.17.0",
+    "openapi-typescript": "^7.13.0",
+    "radix-ui": "^1.4.3",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "react-router-dom": "^7.14.2",
+    "tailwind-merge": "^3.5.0",
+    "tailwindcss": "^4.2.4",
+    "tw-animate-css": "^1.4.0",
+    "typescript": "~6.0.2",
+    "typescript-eslint": "^8.58.2",
+    "vite": "^8.0.10"
+  }
+}
