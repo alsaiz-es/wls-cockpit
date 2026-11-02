@@ -24,6 +24,8 @@ running domain:
 - **Logs** — a unified tail across servers with severity, server and text filters.
 - **JMS** — servers and destinations inventory; optional message browse, detail, delete and
   produce over JMX (see [JMS over JMX](#optional-jms-over-jmx)).
+- **Stores and SAF** — persistent store health, store-and-forward agents with their remote
+  endpoints, and messaging bridge state.
 - **JTA, JNDI, clusters, work managers and Node Manager** — runtime views and guarded actions.
 - **Security** — user lockout counters per server, and clearing the lockout of a user.
 - **Action audit** — lifecycle, deployment, data source, JMS, JTA and user lockout actions and

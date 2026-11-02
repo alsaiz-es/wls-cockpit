@@ -206,6 +206,12 @@ const liveChecks = [
     forbidden: ['Coming soon', 'Request failed'],
   },
   {
+    name: 'messaging-live',
+    path: '/messaging',
+    expected: ['Stores & SAF', 'Persistent stores', 'SAF agents', 'Messaging bridges'],
+    forbidden: ['Coming soon', 'Request failed'],
+  },
+  {
     name: 'security-live',
     path: '/security',
     expected: ['Security', 'User lockout per server', 'AdminServer', 'LOCKED NOW', 'INVALID LOGINS'],

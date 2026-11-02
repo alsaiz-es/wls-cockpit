@@ -21,6 +21,7 @@ import { NodeManager } from '@/routes/NodeManager'
 import { DomainConfigSnapshots } from '@/routes/DomainConfigSnapshots'
 import { ActionAudit } from '@/routes/ActionAudit'
 import { Security } from '@/routes/Security'
+import { Messaging } from '@/routes/Messaging'
 
 export default function App() {
   return (
@@ -42,6 +43,7 @@ export default function App() {
         <Route path="/data-sources/:serverName/:dataSourceName" element={<DataSourceDetails />} />
         <Route path="/jms" element={<Jms />} />
         <Route path="/jms/:serverName/:jmsServerName/:destinationName" element={<JmsDestinationDetails />} />
+        <Route path="/messaging" element={<Messaging />} />
         <Route path="/jndi" element={<Jndi />} />
         <Route path="/jta" element={<Jta />} />
         <Route path="/jta/:serverName" element={<JtaDetails />} />
