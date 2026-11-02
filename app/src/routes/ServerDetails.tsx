@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { type WlsCredentials } from '@/api/client'
 import { readOnlyDemoModeEnabled } from '@/api/runtime-config'
+import { ServerDebugTab } from './server-debug-tab'
 import {
   serverHeapDumpSupport,
   shouldShowHeapDumpUnsupported,
@@ -71,7 +72,7 @@ import {
 } from './topology-configuration-route-model'
 import { routeParam } from './route-params'
 
-type ServerDetailTab = 'overview' | 'metrics' | 'configuration'
+type ServerDetailTab = 'overview' | 'metrics' | 'configuration' | 'debug'
 
 interface ConfigChildDraft extends ConfigEditDraft {
   mode: 'create' | 'update'
@@ -1116,6 +1117,15 @@ function ServerDetailTabs({
         >
           Configuration
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'debug'}
+          className={`${tabClass} ${activeTab === 'debug' ? 'border-accent text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+          onClick={() => onChange('debug')}
+        >
+          Debug
+        </button>
       </div>
     </div>
   )
@@ -1340,7 +1350,9 @@ export function ServerDetails() {
       ? 'metrics'
       : requestedTab === 'configuration'
         ? 'configuration'
-        : 'overview'
+        : requestedTab === 'debug'
+          ? 'debug'
+          : 'overview'
   const metricsFixture = import.meta.env.DEV && (
     searchParams.get('metricsFixture') === 'active' ||
     searchParams.get('metricsFixture') === 'stopped' ||
@@ -1628,6 +1640,7 @@ export function ServerDetails() {
     const next = new URLSearchParams(searchParams)
     if (tab === 'metrics') next.set('tab', 'metrics')
     else if (tab === 'configuration') next.set('tab', 'configuration')
+    else if (tab === 'debug') next.set('tab', 'debug')
     else next.delete('tab')
     setSearchParams(next, { replace: true })
   }, [searchParams, setSearchParams])
@@ -1795,6 +1808,8 @@ export function ServerDetails() {
 
           {activeTab === 'metrics' ? (
             <ServerMetricsTab serverName={serverName} creds={creds} fixtureName={metricsFixture} />
+          ) : activeTab === 'debug' ? (
+            <ServerDebugTab serverName={serverName} readOnlyDemoMode={readOnlyDemoMode} />
           ) : activeTab === 'configuration' ? (
             <ServerConfigurationPanel
               serverName={serverName}

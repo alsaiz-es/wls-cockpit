@@ -17,7 +17,7 @@ running domain:
   pressure and recent log errors on one screen.
 - **Servers** — state, JVM heap and threads per server; start, shut down, suspend and resume
   several servers at once; stuck threads, thread dumps and live metrics per server; which servers
-  need a restart to apply activated changes.
+  need a restart to apply activated changes; turn common debug flags on and off on a running server.
 - **Deployments** — state per target, start / stop / redeploy, deploy by uploading an archive
   from your machine or from an AdminServer-side path, undeploy and target management.
 - **Data sources** — live pool statistics, test and reset pool, guided connection settings.

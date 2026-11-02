@@ -1,5 +1,5 @@
-import type { UserLockoutServerRow } from '@/api/queries/user-lockout'
-import type { StatusTone } from '@/components/status-model'
+import type { UserLockoutServerRow } from '../api/queries/user-lockout.ts'
+import type { StatusTone } from '../components/status-model.ts'
 
 export interface SecurityActionModeOptions {
   readOnlyDemoMode?: boolean

@@ -82,3 +82,10 @@ test('clearing a user lockout is offered in normal mode and removed in demo read
   assert.deepEqual(lockoutClearServers(rows), ['AdminServer'])
   assert.deepEqual(lockoutClearServers(rows, { readOnlyDemoMode: true }), [])
 })
+
+test('debug flag changes are offered in normal mode and removed in demo read-only mode', async () => {
+  const { debugFlagsEditable } = await import('../src/routes/server-debug-model.ts')
+  const snapshot = { flags: { debugJDBCSQL: false } }
+  assert.equal(debugFlagsEditable(snapshot), true)
+  assert.equal(debugFlagsEditable(snapshot, { readOnlyDemoMode: true }), false)
+})
