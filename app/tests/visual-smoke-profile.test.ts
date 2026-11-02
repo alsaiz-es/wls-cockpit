@@ -367,6 +367,7 @@ test('visual smoke topology configuration checks are profile-safe', () => {
   assert.deepEqual(mutations.readActions, [
     { method: 'GET', includes: ['/edit/servers'] },
     { method: 'GET', includes: ['/edit/clusters'] },
+    { method: 'GET', includes: ['/edit/migratableTargets'] },
   ])
   assert.deepEqual(mutations.mutations, [
     { method: 'POST', includes: ['/edit/changeManager/startEdit'] },
@@ -375,6 +376,7 @@ test('visual smoke topology configuration checks are profile-safe', () => {
     { method: 'POST', includes: ['/edit/servers'] },
     { method: 'POST', includes: ['/edit/clusters'] },
     { method: 'DELETE', includes: ['/edit/servers/'] },
+    { method: 'DELETE', includes: ['/edit/migratableTargets/'] },
     { method: 'DELETE', includes: ['/edit/clusters/'] },
   ])
 

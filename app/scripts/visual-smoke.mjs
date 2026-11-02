@@ -950,6 +950,14 @@ async function serverRowText(session, serverName) {
   `)
 }
 
+// The lines of a page that explain a failed action, so a smoke error says why instead of
+// dumping the navigation.
+function failureSummary(body) {
+  const lines = body.split('\n').map((line) => line.trim()).filter(Boolean)
+  const failed = lines.filter((line) => /fail|error|denied|refused|unable/i.test(line))
+  return (failed.length ? failed : lines.slice(-24)).slice(0, 12).join(' | ')
+}
+
 async function waitForServerRow(session, serverName, timeoutMs = 45_000) {
   return waitFor(() => serverRowText(session, serverName), timeoutMs)
 }
@@ -958,7 +966,7 @@ async function waitForServerState(session, serverName, state, timeoutMs = 180_00
   return waitFor(async () => {
     const body = await session.evaluate('document.body.innerText')
     if (body.includes('Lifecycle action failed')) {
-      throw new Error(body.split('\n').filter(Boolean).slice(0, 24).join(' | '))
+      throw new Error(failureSummary(body))
     }
 
     const text = await serverRowText(session, serverName)
@@ -970,7 +978,7 @@ async function waitForServerAnyState(session, serverName, states, timeoutMs = 18
   return waitFor(async () => {
     const body = await session.evaluate('document.body.innerText')
     if (body.includes('Lifecycle action failed')) {
-      throw new Error(body.split('\n').filter(Boolean).slice(0, 24).join(' | '))
+      throw new Error(failureSummary(body))
     }
 
     const text = await serverRowText(session, serverName)
@@ -993,7 +1001,20 @@ async function clickServerLifecycleAction(session, serverName, label) {
           const button = [...row.querySelectorAll('button')].find((candidate) =>
             candidate.innerText.trim().includes(label)
           );
-          if (!button) return { ok: false, reason: 'button-missing', rowText: row.innerText };
+          if (!button) {
+            // Secondary actions live in the row's "More actions" menu.
+            const item = [...document.querySelectorAll('[role="menuitem"]')].find((candidate) =>
+              candidate.innerText.trim().startsWith(label)
+            );
+            if (item) {
+              item.click();
+              return { ok: true, reason: null, rowText: row.innerText };
+            }
+            const trigger = row.querySelector('button[aria-label^="More actions for"]');
+            if (!trigger) return { ok: false, reason: 'button-missing', rowText: row.innerText };
+            trigger.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerType: 'mouse' }));
+            return { ok: false, reason: 'menu-opening', rowText: row.innerText };
+          }
           if (button.disabled) return { ok: false, reason: 'button-disabled', rowText: row.innerText };
 
           button.click();
@@ -1002,7 +1023,8 @@ async function clickServerLifecycleAction(session, serverName, label) {
       `)
 
       if (!lastResult?.ok) return null
-      if (label === 'Shutdown' || label === 'Suspend') await confirmDestructiveDialog(session)
+      // Every server lifecycle action goes through a confirmation (Confirm start, resume, suspend, shutdown).
+      await confirmDestructiveDialog(session)
       return lastResult.rowText
     })
   } catch {
@@ -1033,7 +1055,7 @@ async function deploymentRowText(session, applicationName, targetName) {
       const row = rows.find((candidate) =>
         candidate.innerText.includes(applicationName) &&
         candidate.innerText.includes(targetName) &&
-        !/\\binstances\\b/i.test(candidate.innerText)
+        !/\\binstances?\\b/i.test(candidate.innerText)
       );
       return row ? row.innerText : null;
     })();
@@ -1059,7 +1081,7 @@ async function waitForDeploymentActive(session, applicationName, targetName, tim
   return waitFor(async () => {
     const body = await session.evaluate('document.body.innerText')
     if (body.includes('Deployment action failed')) {
-      throw new Error(body.split('\n').filter(Boolean).slice(0, 24).join(' | '))
+      throw new Error(failureSummary(body))
     }
 
     const text = await deploymentRowText(session, applicationName, targetName)
@@ -1071,7 +1093,7 @@ async function waitForDeploymentNonActive(session, applicationName, targetName, 
   return waitFor(async () => {
     const body = await session.evaluate('document.body.innerText')
     if (body.includes('Deployment action failed')) {
-      throw new Error(body.split('\n').filter(Boolean).slice(0, 24).join(' | '))
+      throw new Error(failureSummary(body))
     }
 
     const text = await deploymentRowText(session, applicationName, targetName)
@@ -1084,7 +1106,7 @@ async function waitForDeploymentActionIdle(session, applicationName, targetName,
   return waitFor(async () => {
     const body = await session.evaluate('document.body.innerText')
     if (body.includes('Deployment action failed')) {
-      throw new Error(body.split('\n').filter(Boolean).slice(0, 24).join(' | '))
+      throw new Error(failureSummary(body))
     }
 
     const text = await deploymentRowText(session, applicationName, targetName)
@@ -1096,7 +1118,7 @@ async function waitForDeploymentActionAccepted(session, applicationName, label, 
   return waitFor(async () => {
     const body = await session.evaluate('document.body.innerText')
     if (body.includes('Deployment action failed')) {
-      throw new Error(body.split('\n').filter(Boolean).slice(0, 24).join(' | '))
+      throw new Error(failureSummary(body))
     }
 
     return body.includes('Deployment progress accepted') && body.includes(`${label} ${applicationName}`) ? body : null
@@ -1116,14 +1138,27 @@ async function clickDeploymentLifecycleAction(session, applicationName, targetNa
           const row = rows.find((candidate) =>
             candidate.innerText.includes(applicationName) &&
             candidate.innerText.includes(targetName) &&
-            !/\\binstances\\b/i.test(candidate.innerText)
+            !/\\binstances?\\b/i.test(candidate.innerText)
           );
           if (!row) return { ok: false, reason: 'row-missing', rowText: null };
 
           const button = [...row.querySelectorAll('button')].find((candidate) =>
             candidate.innerText.trim().includes(label)
           );
-          if (!button) return { ok: false, reason: 'button-missing', rowText: row.innerText };
+          if (!button) {
+            // Secondary actions (Redeploy, Undeploy) live in the row's "More actions" menu.
+            const item = [...document.querySelectorAll('[role="menuitem"]')].find((candidate) =>
+              candidate.innerText.trim().startsWith(label)
+            );
+            if (item) {
+              item.click();
+              return { ok: true, reason: null, rowText: row.innerText };
+            }
+            const trigger = row.querySelector('button[aria-label^="More actions for"]');
+            if (!trigger) return { ok: false, reason: 'button-missing', rowText: row.innerText };
+            trigger.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerType: 'mouse' }));
+            return { ok: false, reason: 'menu-opening', rowText: row.innerText };
+          }
           if (button.disabled) return { ok: false, reason: 'button-disabled', rowText: row.innerText };
 
           button.click();
@@ -1132,7 +1167,8 @@ async function clickDeploymentLifecycleAction(session, applicationName, targetNa
       `)
 
       if (!lastResult?.ok) return null
-      if (label === 'Stop' || label === 'Undeploy') await confirmDestructiveDialog(session)
+      // Every deployment action goes through a confirmation (Confirm start, stop, redeploy, undeploy).
+      await confirmDestructiveDialog(session)
       return lastResult.rowText
     })
   } catch {
@@ -1142,6 +1178,25 @@ async function clickDeploymentLifecycleAction(session, applicationName, targetNa
       }`,
     )
   }
+}
+
+// Opens the "More actions" menu of the table row that names both values and returns its text.
+async function openRowActionsMenu(session, first, second) {
+  return waitFor(async () => {
+    const result = await session.evaluate(`
+      (() => {
+        const menu = document.querySelector('[role="menu"]');
+        if (menu) return menu.innerText;
+        const row = [...document.querySelectorAll('tbody tr')].find((candidate) =>
+          candidate.innerText.includes(${JSON.stringify(first)}) && candidate.innerText.includes(${JSON.stringify(second)})
+        );
+        const trigger = row?.querySelector('button[aria-label^="More actions for"]');
+        if (trigger) trigger.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerType: 'mouse' }));
+        return null;
+      })();
+    `)
+    return result
+  }, 10_000)
 }
 
 async function dataSourceRowText(session, dataSourceName, serverName) {
@@ -1174,7 +1229,7 @@ async function waitForDataSourceRunning(session, dataSourceName, serverName, tim
   return waitFor(async () => {
     const body = await session.evaluate('document.body.innerText')
     if (body.includes('Datasource action failed')) {
-      throw new Error(body.split('\n').filter(Boolean).slice(0, 24).join(' | '))
+      throw new Error(failureSummary(body))
     }
 
     const text = await dataSourceRowText(session, dataSourceName, serverName)
@@ -1186,7 +1241,7 @@ async function waitForDataSourceSuspended(session, dataSourceName, serverName, t
   return waitFor(async () => {
     const body = await session.evaluate('document.body.innerText')
     if (body.includes('Datasource action failed')) {
-      throw new Error(body.split('\n').filter(Boolean).slice(0, 24).join(' | '))
+      throw new Error(failureSummary(body))
     }
 
     const text = await dataSourceRowText(session, dataSourceName, serverName)
@@ -1198,7 +1253,7 @@ async function waitForDataSourceActionCompleted(session, timeoutMs = 45_000) {
   return waitFor(async () => {
     const body = await session.evaluate('document.body.innerText')
     if (body.includes('Datasource action failed')) {
-      throw new Error(body.split('\n').filter(Boolean).slice(0, 24).join(' | '))
+      throw new Error(failureSummary(body))
     }
     return body.includes('Datasource action completed') ? body : null
   }, timeoutMs)
@@ -1222,7 +1277,20 @@ async function clickDataSourceLifecycleAction(session, dataSourceName, serverNam
           const button = [...row.querySelectorAll('button')].find((candidate) =>
             candidate.innerText.trim().includes(label)
           );
-          if (!button) return { ok: false, reason: 'button-missing', rowText: row.innerText };
+          if (!button) {
+            // Secondary actions live in the row's "More actions" menu.
+            const item = [...document.querySelectorAll('[role="menuitem"]')].find((candidate) =>
+              candidate.innerText.trim().startsWith(label)
+            );
+            if (item) {
+              item.click();
+              return { ok: true, reason: null, rowText: row.innerText };
+            }
+            const trigger = row.querySelector('button[aria-label^="More actions for"]');
+            if (!trigger) return { ok: false, reason: 'button-missing', rowText: row.innerText };
+            trigger.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerType: 'mouse' }));
+            return { ok: false, reason: 'menu-opening', rowText: row.innerText };
+          }
           if (button.disabled) return { ok: false, reason: 'button-disabled', rowText: row.innerText };
 
           button.click();
@@ -1922,7 +1990,12 @@ async function runDataSourceLifecycleSmoke(session, creds) {
     await clickDataSourceLifecycleAction(session, dataSourceName, serverName, 'Resume')
     const restoredRow = await waitForDataSourceRunning(session, dataSourceName, serverName)
     let pageText = await session.evaluate('document.body.innerText')
-    assertText('data-sources-config-affordances', pageText, ['Create', 'TARGETS', 'JNDI', 'Edit', 'Targets', 'Delete'])
+    assertText('data-sources-config-affordances', pageText, ['Create', 'TARGETS', 'JNDI'])
+    // Edit, Targets and Delete are in the row's "More actions" menu.
+    const menuText = await openRowActionsMenu(session, dataSourceName, serverName)
+    assertText('data-sources-config-menu', menuText, ['Edit', 'Edit targets', 'Delete'])
+    await session.evaluate(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); true`)
+    await sleep(300)
     await clickButtonContaining(session, 'data-sources-create-affordance', 'Create')
     pageText = await waitForExpectedText(
       session,
@@ -2262,14 +2335,21 @@ async function runJmsMessageRoundtripSmoke(session, creds) {
     })();
   `)
   await clickButtonContaining(session, 'jms-message-roundtrip-apply-selector', 'Apply')
-  await waitForExpectedText(
-    session,
-    'jms-message-roundtrip-row',
-    ['MESSAGE ID', correlationId],
-    ['No messages matched the current browse window.', 'Request failed'],
+  // The correlation ID also appears in the "produced" notice, so wait for the browse row itself
+  // and open that row's detail, not the first message of an unfiltered list.
+  await waitFor(async () =>
+    session.evaluate(`
+      (() => {
+        const row = [...document.querySelectorAll('tbody tr')].find((candidate) =>
+          candidate.innerText.includes(${JSON.stringify(correlationId)})
+        );
+        const view = row && [...row.querySelectorAll('button')].find((candidate) => candidate.innerText.trim() === 'View');
+        if (!view) return null;
+        view.click();
+        return true;
+      })();
+    `),
   )
-
-  await clickButtonContaining(session, 'jms-message-roundtrip-view', 'View')
   await waitForExpectedText(
     session,
     'jms-message-roundtrip-viewed',
@@ -2285,7 +2365,10 @@ async function runJmsMessageRoundtripSmoke(session, creds) {
   await waitFor(async () => {
     const clicked = await session.evaluate(`
       (() => {
-        const button = [...document.querySelectorAll('tbody button')].find((candidate) =>
+        const row = [...document.querySelectorAll('tbody tr')].find((candidate) =>
+          candidate.innerText.includes(${JSON.stringify(correlationId)})
+        );
+        const button = row && [...row.querySelectorAll('button')].find((candidate) =>
           candidate.innerText.trim() === 'Delete' && !candidate.disabled
         );
         if (!button) return false;
@@ -2527,7 +2610,7 @@ async function runLogArchiveTailSelectionSmoke(session, creds) {
     `)
     if (selected !== targetArchive) return null
     const body = await session.evaluate('document.body.innerText')
-    if (body.includes('Request failed')) throw new Error(body.split('\n').filter(Boolean).slice(0, 24).join(' | '))
+    if (body.includes('Request failed')) throw new Error(failureSummary(body))
     return body.includes(targetArchive) ? body : null
   })
   const text = await waitForAnyExpectedText(
@@ -2617,7 +2700,7 @@ async function runDiagnosticSnapshotSmoke(session, creds) {
     if (values.length >= 1) return values
     const body = await session.evaluate('document.body.innerText')
     if (body.includes('Unable to generate diagnostic snapshot')) {
-      throw new Error(body.split('\n').filter(Boolean).slice(0, 24).join(' | '))
+      throw new Error(failureSummary(body))
     }
     return null
   }, 120_000)
@@ -2880,9 +2963,15 @@ async function topologyResourceExists(creds, collectionName, resourceName) {
 
 async function deleteTopologyResourceIfPresent(creds, collectionName, resourceName) {
   if (!await topologyResourceExists(creds, collectionName, resourceName)) return false
-  await runTopologyEditSmokeTransaction(creds, `delete ${collectionName}/${resourceName}`, [
-    { method: 'DELETE', path: editResourcePath(creds, collectionName, resourceName) },
-  ])
+  const steps = []
+  // A clustered server gets an automatic "<server> (migratable)" target that must go with it,
+  // as Cockpit's own server delete does.
+  const migratable = `${resourceName} (migratable)`
+  if (collectionName === 'servers' && await topologyResourceExists(creds, 'migratableTargets', migratable)) {
+    steps.push({ method: 'DELETE', path: editResourcePath(creds, 'migratableTargets', migratable) })
+  }
+  steps.push({ method: 'DELETE', path: editResourcePath(creds, collectionName, resourceName) })
+  await runTopologyEditSmokeTransaction(creds, `delete ${collectionName}/${resourceName}`, steps)
   return true
 }
 
@@ -3259,6 +3348,7 @@ export const SMOKE_CHECK_REGISTRY = [
     readActions: [
       readAction('GET', ['/edit/servers']),
       readAction('GET', ['/edit/clusters']),
+      readAction('GET', ['/edit/migratableTargets']),
     ],
     mutations: [
       mutation('POST', ['/edit/changeManager/startEdit']),
@@ -3267,6 +3357,7 @@ export const SMOKE_CHECK_REGISTRY = [
       mutation('POST', ['/edit/servers']),
       mutation('POST', ['/edit/clusters']),
       mutation('DELETE', ['/edit/servers/']),
+      mutation('DELETE', ['/edit/migratableTargets/']),
       mutation('DELETE', ['/edit/clusters/']),
     ],
     run: runTopologyConfigurationDisposableMutationSmoke,
