@@ -1,6 +1,7 @@
 import { actionAuditHeaders } from './action-audit-headers.ts'
 import { WLS_REST_PROXY_BASE_URL, wlsBasicAuthHeader, type WlsCredentials } from './client.ts'
 import { WLS_REST_TIMEOUT_MS } from './wls-errors.ts'
+import { SIGN_IN_HEADER } from './credential-guard-contract.ts'
 
 export type CredentialCheck = { ok: true } | { ok: false; reason: 'unauthorized' | 'unreachable'; message: string }
 
@@ -28,6 +29,8 @@ export async function verifyWlsCredentials(
         Authorization: wlsBasicAuthHeader(creds),
         Accept: 'application/json',
         'X-Requested-By': 'wls-cockpit',
+        // Lets this request through even after the local server stopped forwarding a rejected password.
+        [SIGN_IN_HEADER]: '1',
         ...actionAuditHeaders(creds),
       },
       signal: AbortSignal.timeout(timeoutMs),

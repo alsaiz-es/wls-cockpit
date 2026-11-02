@@ -101,6 +101,10 @@ Usernames and passwords are never accepted on the command line: `--user`, `--use
 - **Passwords stay in the browser tab.** The password is entered in the login form and kept in
   the tab's `sessionStorage` for that session. Cockpit never writes it to the profile catalog,
   the audit log or `localStorage`, and the CLI does not accept it.
+- **No lockout from polling.** WebLogic counts each request with a wrong password as a failed
+  login. When the password of a session stops working (changed, expired or locked), the local
+  server lets only one request reach WebLogic, refuses the rest locally until the next sign-in,
+  and the browser signs out instead of polling on.
 - **Same-origin proxy.** The browser only talks to the Cockpit origin. Requests to `/api/wls/*`
   are forwarded to the selected AdminServer with the browser's `Authorization` header; the
   upstream `WWW-Authenticate` header is dropped so the browser does not show its own

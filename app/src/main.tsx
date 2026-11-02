@@ -5,6 +5,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import './index.css'
 import App from './App.tsx'
 import { AuthProvider } from '@/auth/AuthContext'
+import { installCredentialRejectionWatch } from '@/api/credential-rejection'
+
+installCredentialRejectionWatch()
 
 const queryClient = new QueryClient({
   defaultOptions: {

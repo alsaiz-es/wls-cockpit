@@ -39,6 +39,12 @@ import {
   validateJndiPayload,
 } from './jms-jmx-contract.ts'
 import { invokeJmsJmxHelper, jmsJmxErrorResponse } from './jms-jmx.ts'
+import { CredentialGuard, credentialKey, defaultCredentialGuard } from './credential-guard.ts'
+import {
+  CREDENTIALS_REJECTED_CODE,
+  CREDENTIALS_REJECTED_HEADER,
+  SIGN_IN_HEADER,
+} from '../src/api/credential-guard-contract.ts'
 import {
   DEPLOYMENT_UPLOAD_PATH,
   deploymentUploadUpstreamPath,
@@ -71,6 +77,7 @@ const LOCAL_RESPONSE_HEADERS = new Set([
 ])
 const LOCAL_ONLY_HEADERS = new Set([
   WLS_TARGET_HEADER_LOWER,
+  SIGN_IN_HEADER.toLowerCase(),
   AUDIT_PROFILE_ID_HEADER,
   AUDIT_PROFILE_NAME_HEADER,
   AUDIT_USERNAME_HEADER,
@@ -90,6 +97,24 @@ export interface CockpitServerOptions {
   // Address the server listens on. Unless it is a non-loopback address, only requests whose Host
   // names loopback are served (DNS-rebinding guard).
   bindHost?: string
+  // Tests pass their own; every request otherwise shares one guard, also under the Vite dev server.
+  credentialGuard?: CredentialGuard
+}
+
+function credentialGuardFor(options: CockpitServerOptions) {
+  return options.credentialGuard ?? defaultCredentialGuard
+}
+
+function sendCredentialsRejected(req: IncomingMessage, res: ServerResponse) {
+  if (hasRequestBody(req.method)) req.resume()
+  res.setHeader(CREDENTIALS_REJECTED_HEADER, '1')
+  sendJson(res, 401, {
+    error: {
+      code: CREDENTIALS_REJECTED_CODE,
+      message: 'WebLogic rejected these credentials. Cockpit stopped sending them so the account is not locked out; sign in again.',
+      retryable: false,
+    },
+  })
 }
 
 export const COCKPIT_APP_ID = 'wls-cockpit'
@@ -354,10 +379,23 @@ export async function proxyWlsRequest(req: IncomingMessage, res: ServerResponse,
     return
   }
 
+  const credentials = credentialKey(target.targetUrl, headerValue(req, 'authorization'))
+  const admission = await credentialGuardFor(options).admit(credentials, headerValue(req, SIGN_IN_HEADER) === '1')
+  if (!admission.ok) {
+    sendCredentialsRejected(req, res)
+    return
+  }
+
   const rawUrl = req.url ?? '/'
   const upstreamPath = rawUrl.replace(/^\/api\/wls(?=\/|$)/, '') || '/'
   const upstreamUrl = new URL(upstreamPath, target.targetUrl)
-  const body = hasRequestBody(req.method) ? await requestBody(req) : undefined
+  let body: Buffer | undefined
+  try {
+    body = hasRequestBody(req.method) ? await requestBody(req) : undefined
+  } catch (error) {
+    admission.settle(null)
+    throw error
+  }
   const auditAction = classifyActionAuditRequest(req.method ?? 'GET', upstreamUrl.pathname, parseAuditRequestBody(body))
   const auditDraft = auditAction
     ? createAuditDraft({ req, method: req.method ?? 'GET', pathname: upstreamUrl.pathname, target, action: auditAction })
@@ -372,11 +410,14 @@ export async function proxyWlsRequest(req: IncomingMessage, res: ServerResponse,
     })
     upstreamBody = Buffer.from(await upstream.arrayBuffer())
   } catch (error) {
+    admission.settle(null)
     await writeAuditForError(options, auditDraft, error)
     throw error
   }
+  admission.settle(upstream.status)
 
   res.statusCode = upstream.status
+  if (upstream.status === 401 && headerValue(req, SIGN_IN_HEADER) !== '1') res.setHeader(CREDENTIALS_REJECTED_HEADER, '1')
   upstream.headers.forEach((value, name) => {
     const lower = name.toLowerCase()
     if (!HOP_BY_HOP_HEADERS.has(lower) && !LOCAL_RESPONSE_HEADERS.has(lower)) res.setHeader(name, value)
@@ -422,6 +463,12 @@ export async function handleDeploymentUploadRequest(req: IncomingMessage, res: S
     return
   }
 
+  const admission = await credentialGuardFor(options).admit(credentialKey(target.targetUrl, authorization))
+  if (!admission.ok) {
+    sendCredentialsRejected(req, res)
+    return
+  }
+
   const { version, model, fileName, size } = upload.value
   const auditAction = classifyActionAuditRequest('POST', DEPLOYMENT_UPLOAD_PATH, model)
   const auditDraft = auditAction
@@ -445,13 +492,16 @@ export async function handleDeploymentUploadRequest(req: IncomingMessage, res: S
     } as RequestInit & { duplex: 'half' })
     upstreamBody = Buffer.from(await upstream.arrayBuffer())
   } catch (error) {
+    admission.settle(null)
     await writeAuditForError(options, auditDraft, error)
     const message = error instanceof Error ? error.message : 'Deployment upload failed.'
     sendJson(res, 502, { error: message })
     return
   }
+  admission.settle(upstream.status)
 
   res.statusCode = upstream.status
+  if (upstream.status === 401) res.setHeader(CREDENTIALS_REJECTED_HEADER, '1')
   const contentType = upstream.headers.get('content-type')
   if (contentType) res.setHeader('Content-Type', contentType)
   res.setHeader('Content-Length', upstreamBody.byteLength)
@@ -478,6 +528,10 @@ export async function handleJndiT3Request(req: IncomingMessage, res: ServerRespo
   const auth = readBasicAuthHeader(headerValue(req, 'authorization'))
   if (!auth.ok) {
     sendJson(res, auth.status, { error: auth.message })
+    return
+  }
+  if (credentialGuardFor(options).isRejected(credentialKey(target.targetUrl, headerValue(req, 'authorization')))) {
+    sendCredentialsRejected(req, res)
     return
   }
   const payload = validateJndiPayload(await requestJson(req))
@@ -527,6 +581,10 @@ export async function handleJmsJmxRequest(req: IncomingMessage, res: ServerRespo
   const auth = readBasicAuthHeader(headerValue(req, 'authorization'))
   if (!auth.ok) {
     sendJson(res, auth.status, { error: auth.message })
+    return
+  }
+  if (credentialGuardFor(options).isRejected(credentialKey(target.targetUrl, headerValue(req, 'authorization')))) {
+    sendCredentialsRejected(req, res)
     return
   }
 

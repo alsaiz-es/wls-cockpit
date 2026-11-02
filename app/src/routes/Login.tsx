@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { clearSignInNotice, readSignInNotice } from '@/api/credential-rejection'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Check, Pencil, PlugZap, Plus, Trash2 } from 'lucide-react'
 import { useAuth } from '@/auth/useAuth'
@@ -94,7 +95,8 @@ export function Login() {
   const [profileDraft, setProfileDraft] = useState<ProfileFormState>(() =>
     selectedProfile ? profileForm(selectedProfile) : emptyProfileForm(),
   )
-  const [message, setMessage] = useState<string | null>(null)
+  const [message, setMessage] = useState<string | null>(() => readSignInNotice())
+  useEffect(() => clearSignInNotice(), [])
   const [connecting, setConnecting] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
 

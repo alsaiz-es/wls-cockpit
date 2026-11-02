@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { type WlsCredentials } from '@/api/client'
+import { onCredentialsRejected, writeSignInNotice } from '@/api/credential-rejection'
 import { AuthContext, type AuthContextValue } from './auth-context'
 import {
   clearActiveConnectionSession,
@@ -20,6 +21,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (creds) writeActiveConnectionSession(creds)
     else clearActiveConnectionSession()
   }, [creds])
+
+  // WebLogic rejected the password of this session (changed, expired or locked): sign out at once
+  // so polling does not keep failing logins against the account.
+  useEffect(
+    () =>
+      onCredentialsRejected(() => {
+        writeSignInNotice(
+          'WebLogic rejected the password of this session, so Cockpit signed out and stopped polling to avoid locking the account. Sign in again.',
+        )
+        void queryClient.cancelQueries()
+        queryClient.clear()
+        setCreds(null)
+      }),
+    [queryClient],
+  )
 
   const value = useMemo<AuthContextValue>(
     () => ({
