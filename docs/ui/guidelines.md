@@ -47,7 +47,8 @@ panels.
 ## 2. Layout shell
 
 Every authenticated route renders inside this shell. The login screen is
-the only exception — it is a centered card on a plain background.
+the only exception: the brand row (mark, name, version) and the connection
+cards, centered on a plain background.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
@@ -85,6 +86,8 @@ the only exception — it is a centered card on a plain background.
   - **Theme mode control** — compact icon-only group for Dark, Light, and
     System. Each choice is a square button with an accessible label and
     selected state; no explanatory text or settings page.
+  - **Jump**, the **alerts bell** and **Snapshot** (diagnostic export) sit
+    between the domain name and the theme control.
   - **User chip** — `weblogic` (username) in monospace, no avatar.
   - **Switch domain** and **Sign out** — ghost variant, 28 px tall, each with
     an icon and a tooltip that says what happens to the session. Switch keeps
@@ -95,13 +98,20 @@ the only exception — it is a centered card on a plain background.
 
 - Width: 200 px, fixed. Collapses to a 48 px icon-only rail (later — not in
   v1, but reserve the prop on the component).
-- Items (MVP order): Dashboard, Servers, Deployments, Data Sources, Logs.
+- Top: a 48 px brand row with the app mark (`/favicon.svg`, 20 px),
+  `WLS Cockpit` in 13 px semibold and the version (`v` + `package.json`
+  version, injected as `__WLS_COCKPIT_VERSION__`) in 11 px mono, subtle
+  color. No illustration, no tagline.
+- Items, in groups with an 11 px uppercase subtle heading: Dashboard (no
+  heading); Runtime (Servers, Clusters, Work Managers, Node Manager);
+  Resources (Deployments, Data Sources, JMS, Stores & SAF, JNDI, JTA);
+  Operations (Security, Logs, Config Snapshots, Action Audit). Headings do
+  not collapse.
 - Each item: 14 px icon (lucide) + label, 32 px tall row, 12 px horizontal
   padding.
 - Active route: subtle accent background (8 % accent over surface) with a
   2 px left border in the accent color. Inactive: no background, hover sets
   a 4 % surface lift.
-- Bottom of the rail: optional secondary group later (Settings, About).
 
 ### Main content
 

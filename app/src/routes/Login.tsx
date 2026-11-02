@@ -26,6 +26,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { MonoText } from '@/components/mono-text'
+import { APP_VERSION } from '@/app-version'
 import { cn } from '@/lib/utils'
 
 const DEFAULT_CONFIG = readRuntimeConfig()
@@ -241,14 +242,19 @@ export function Login() {
   }
 
   return (
-    <div className="min-h-svh bg-background p-6 text-foreground">
-      <div className="mx-auto grid w-full max-w-5xl gap-4 lg:grid-cols-[minmax(260px,340px)_minmax(0,1fr)]">
+    <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-background p-6 text-foreground">
+      <div className="flex items-center gap-2">
+        <img src="/favicon.svg" alt="" className="size-7" />
+        <span className="text-[18px] font-semibold leading-6">WLS Cockpit</span>
+        <MonoText className="text-subtle-foreground text-[11px]">v{APP_VERSION}</MonoText>
+      </div>
+      <div className="grid w-full max-w-5xl items-start gap-4 lg:grid-cols-[minmax(260px,340px)_minmax(0,1fr)]">
         <Card className="rounded-lg">
           <CardHeader>
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <CardTitle>WLS Cockpit</CardTitle>
-                <CardDescription>Domain connections</CardDescription>
+                <CardTitle>Domain connections</CardTitle>
+                <CardDescription>Choose a domain or add one.</CardDescription>
               </div>
               {readRuntimeConfig().shutdownAvailable ? <QuitCockpitButton /> : null}
             </div>

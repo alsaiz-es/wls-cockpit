@@ -14,7 +14,9 @@ import {
   ShieldCheck,
   Workflow,
 } from 'lucide-react'
+import { Fragment } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { APP_VERSION } from '@/app-version'
 import { readRuntimeConfig } from '@/api/runtime-config'
 import { useDomainDashboard } from '@/api/queries/domain-dashboard'
 import { useEnvironmentStatus } from '@/api/queries/environment-status'
@@ -35,21 +37,21 @@ import { StatusBadge } from './status-badge'
 import { ThemeModeControl } from './theme-mode-control'
 
 const navItems = [
-  { label: 'Dashboard', path: '/dashboard', icon: Gauge },
-  { label: 'Servers', path: '/servers', icon: Server },
-  { label: 'Clusters', path: '/clusters', icon: Workflow },
-  { label: 'Work Managers', path: '/work-managers', icon: Activity },
-  { label: 'Node Manager', path: '/node-manager', icon: RadioTower },
-  { label: 'Deployments', path: '/deployments', icon: Package },
-  { label: 'Data Sources', path: '/data-sources', icon: Database },
-  { label: 'JMS', path: '/jms', icon: MessageSquareText },
-  { label: 'Stores & SAF', path: '/messaging', icon: HardDrive },
-  { label: 'JNDI', path: '/jndi', icon: Network },
-  { label: 'JTA', path: '/jta', icon: Activity },
-  { label: 'Security', path: '/security', icon: ShieldCheck },
-  { label: 'Logs', path: '/logs', icon: FileText },
-  { label: 'Config Snapshots', path: '/config-snapshots', icon: Archive },
-  { label: 'Action Audit', path: '/audit', icon: ClipboardList },
+  { label: 'Dashboard', path: '/dashboard', icon: Gauge, group: null },
+  { label: 'Servers', path: '/servers', icon: Server, group: 'Runtime' },
+  { label: 'Clusters', path: '/clusters', icon: Workflow, group: 'Runtime' },
+  { label: 'Work Managers', path: '/work-managers', icon: Activity, group: 'Runtime' },
+  { label: 'Node Manager', path: '/node-manager', icon: RadioTower, group: 'Runtime' },
+  { label: 'Deployments', path: '/deployments', icon: Package, group: 'Resources' },
+  { label: 'Data Sources', path: '/data-sources', icon: Database, group: 'Resources' },
+  { label: 'JMS', path: '/jms', icon: MessageSquareText, group: 'Resources' },
+  { label: 'Stores & SAF', path: '/messaging', icon: HardDrive, group: 'Resources' },
+  { label: 'JNDI', path: '/jndi', icon: Network, group: 'Resources' },
+  { label: 'JTA', path: '/jta', icon: Activity, group: 'Resources' },
+  { label: 'Security', path: '/security', icon: ShieldCheck, group: 'Operations' },
+  { label: 'Logs', path: '/logs', icon: FileText, group: 'Operations' },
+  { label: 'Config Snapshots', path: '/config-snapshots', icon: Archive, group: 'Operations' },
+  { label: 'Action Audit', path: '/audit', icon: ClipboardList, group: 'Operations' },
 ] as const
 
 const routeLabels = new Map(navItems.map((item) => [item.path, item.label]))
@@ -275,13 +277,26 @@ export function AppShell() {
         </div>
       </header>
 
-      <aside className="border-r border-border bg-surface-1 py-3">
-        <nav className="space-y-1 px-2" aria-label="Main">
-          {navItems.map((item) => {
+      <aside className="flex min-h-0 flex-col border-r border-border bg-surface-1">
+        <div className="flex h-12 shrink-0 items-center gap-2 border-b border-border px-4">
+          <img src="/favicon.svg" alt="" className="size-5 shrink-0" />
+          <span className="truncate text-[13px] font-semibold leading-[18px]">WLS Cockpit</span>
+          <MonoText className="text-subtle-foreground ml-auto shrink-0 text-[11px]" title={`WLS Cockpit ${APP_VERSION}`}>
+            v{APP_VERSION}
+          </MonoText>
+        </div>
+        <nav className="min-h-0 space-y-1 overflow-y-auto px-2 py-3" aria-label="Main">
+          {navItems.map((item, index) => {
             const Icon = item.icon
+            const startsGroup = item.group !== null && item.group !== navItems[index - 1]?.group
             return (
+              <Fragment key={item.path}>
+              {startsGroup ? (
+                <div className="text-subtle-foreground px-3 pb-1 pt-3 text-[11px] font-medium uppercase leading-[14px] tracking-[0.06em]">
+                  {item.group}
+                </div>
+              ) : null}
               <NavLink
-                key={item.path}
                 to={item.path}
                 className={({ isActive }) =>
                   cn(
@@ -295,6 +310,7 @@ export function AppShell() {
                 <Icon className="size-3.5 shrink-0" strokeWidth={1.5} />
                 <span className="truncate">{item.label}</span>
               </NavLink>
+              </Fragment>
             )
           })}
         </nav>

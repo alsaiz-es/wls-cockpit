@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { defineConfig, loadEnv, type Plugin } from 'vite'
@@ -51,6 +52,11 @@ function wlsProxyPlugin(targetUrl: string, defaultVersion: WlsVersion): Plugin {
   }
 }
 
+function packageVersion(): string {
+  const pkg = JSON.parse(readFileSync(path.resolve(__dirname, 'package.json'), 'utf8')) as { version?: string }
+  return pkg.version ?? 'dev'
+}
+
 export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const configuredTarget = normalizeWlsTarget(env.VITE_WLS_TARGET || 'http://localhost:7001')
@@ -62,6 +68,9 @@ export default defineConfig(({ command, mode }) => {
     // VITE_* values from a local .env (lab targets) out of production bundles.
     envPrefix: command === 'build' ? 'WLS_COCKPIT_BUILD_' : 'VITE_',
     plugins: [wlsProxyPlugin(target, defaultVersion), react(), tailwindcss()],
+    define: {
+      __WLS_COCKPIT_VERSION__: JSON.stringify(packageVersion()),
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
