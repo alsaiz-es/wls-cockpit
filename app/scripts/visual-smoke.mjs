@@ -1010,7 +1010,7 @@ async function clickServerLifecycleAction(session, serverName, label) {
               item.click();
               return { ok: true, reason: null, rowText: row.innerText };
             }
-            const trigger = row.querySelector('button[aria-label^="More actions for"]');
+            const trigger = row.querySelector('button[aria-label^="More "]');
             if (!trigger) return { ok: false, reason: 'button-missing', rowText: row.innerText };
             trigger.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerType: 'mouse' }));
             return { ok: false, reason: 'menu-opening', rowText: row.innerText };
@@ -1154,7 +1154,7 @@ async function clickDeploymentLifecycleAction(session, applicationName, targetNa
               item.click();
               return { ok: true, reason: null, rowText: row.innerText };
             }
-            const trigger = row.querySelector('button[aria-label^="More actions for"]');
+            const trigger = row.querySelector('button[aria-label^="More "]');
             if (!trigger) return { ok: false, reason: 'button-missing', rowText: row.innerText };
             trigger.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerType: 'mouse' }));
             return { ok: false, reason: 'menu-opening', rowText: row.innerText };
@@ -1190,7 +1190,7 @@ async function openRowActionsMenu(session, first, second) {
         const row = [...document.querySelectorAll('tbody tr')].find((candidate) =>
           candidate.innerText.includes(${JSON.stringify(first)}) && candidate.innerText.includes(${JSON.stringify(second)})
         );
-        const trigger = row?.querySelector('button[aria-label^="More actions for"]');
+        const trigger = row?.querySelector('button[aria-label^="More "]');
         if (trigger) trigger.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerType: 'mouse' }));
         return null;
       })();
@@ -1286,7 +1286,7 @@ async function clickDataSourceLifecycleAction(session, dataSourceName, serverNam
               item.click();
               return { ok: true, reason: null, rowText: row.innerText };
             }
-            const trigger = row.querySelector('button[aria-label^="More actions for"]');
+            const trigger = row.querySelector('button[aria-label^="More "]');
             if (!trigger) return { ok: false, reason: 'button-missing', rowText: row.innerText };
             trigger.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerType: 'mouse' }));
             return { ok: false, reason: 'menu-opening', rowText: row.innerText };
