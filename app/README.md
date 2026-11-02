@@ -19,7 +19,7 @@ Options:
 - `--port=<port>`: local bind port. Defaults to `8080`; use `0` for an ephemeral port.
 - `--version=<wls-rest-version>`: default WLS REST version for initial profile seeding (`14.1.2.0.0` or `12.2.1.4.0`).
 - `--open` / `--no-open`: open the default browser once Cockpit is listening, or never. Without either flag the browser opens only when stdout is an interactive terminal. `WLS_COCKPIT_OPEN=1` or `0` does the same.
-- `--exit-with-last-tab`: stop when the last browser tab with Cockpit closes, 10 seconds after it closes so a reload keeps it running. Each tab reports itself to the local server while open. `WLS Cockpit.app` and `WLS Cockpit.exe` start Cockpit this way; `WLS_COCKPIT_EXIT_WITH_LAST_TAB=1` does the same.
+- `--exit-with-last-tab`: stop when the last browser tab with Cockpit closes, 10 seconds after it closes so a reload keeps it running. Each tab keeps a WebSocket open to the local server while it lives, which the browser drops when the tab closes. `WLS Cockpit.app` and `WLS Cockpit.exe` start Cockpit this way; `WLS_COCKPIT_EXIT_WITH_LAST_TAB=1` does the same.
 - `--read-only-demo`: hide mutation controls and mask sensitive display values. The local server also refuses JMS delete and produce requests; other REST requests are still proxied, so this is not an authorization boundary. `WLS_COCKPIT_READ_ONLY=1` does the same.
 
 Each option also has an environment variable: `WLS_COCKPIT_TARGET`, `WLS_COCKPIT_HOST`, `WLS_COCKPIT_PORT`, `WLS_COCKPIT_VERSION`.

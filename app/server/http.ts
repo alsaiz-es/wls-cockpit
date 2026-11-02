@@ -1,6 +1,7 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
+import type { Duplex } from 'node:stream'
 import { URL, fileURLToPath } from 'node:url'
 import {
   WLS_TARGET_HEADER,
@@ -41,6 +42,7 @@ import {
 import { invokeJmsJmxHelper, jmsJmxErrorResponse } from './jms-jmx.ts'
 import { CredentialGuard, credentialKey, defaultCredentialGuard } from './credential-guard.ts'
 import { TabPresence, parseTabPresenceMessage } from './tab-presence.ts'
+import { acceptTabSocket } from './tab-socket.ts'
 import { TAB_PRESENCE_PATH } from '../src/api/tab-presence-contract.ts'
 import { ALERT_RULES_PATH, alertRulesConfigToFileShape, validateAlertRulesConfig } from '../src/api/alert-rules.ts'
 import { AlertRulesStore } from './alert-rules-store.ts'
@@ -837,7 +839,8 @@ export function createCockpitServer(options: CockpitServerOptions): Server {
   const presence = exitsWithLastTab(options)
     ? new TabPresence({ onLastTabClosed: () => options.onShutdownRequest?.(), ...options.tabPresenceTiming })
     : null
-  return createServer((req, res) => {
+  const tabSockets = new Set<Duplex>()
+  const server = createServer((req, res) => {
     void (async () => {
       if (!isAllowedHost(req, options)) {
         sendJson(res, 403, { error: 'Cockpit only answers requests addressed to localhost or 127.0.0.1.' })
@@ -892,4 +895,16 @@ export function createCockpitServer(options: CockpitServerOptions): Server {
       sendJson(res, 502, { error: message })
     })
   })
+  // Each tab's WebSocket (tab-socket.ts); without --exit-with-last-tab there is nothing to accept.
+  server.on('upgrade', (req: IncomingMessage, socket: Duplex) => {
+    if (!presence) {
+      socket.end('HTTP/1.1 404 Not Found\r\nConnection: close\r\nContent-Length: 0\r\n\r\n')
+      return
+    }
+    acceptTabSocket(req, socket, presence, isAllowedHost(req, options), tabSockets)
+  })
+  server.on('close', () => {
+    for (const socket of tabSockets) socket.destroy()
+  })
+  return server
 }

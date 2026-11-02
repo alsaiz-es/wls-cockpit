@@ -1,9 +1,12 @@
 // Stops Cockpit when its last browser tab closes, for runs started by double-click (the macOS app
-// and WLS Cockpit.exe), which have no terminal or window to stop them from. Each tab reports
-// open, a heartbeat while it lives, and close (a beacon on pagehide). With no tab left, Cockpit
-// waits GRACE_MS, so a reload or a quick reopen keeps it running, then stops. A tab that vanished
-// without a close (browser crash) counts as gone after STALE_MS without heartbeats; that is long
-// because browsers slow timers in background tabs to about one a minute.
+// and WLS Cockpit.exe), which have no terminal or window to stop them from. Each tab keeps a
+// WebSocket open to the server while it lives (connect/disconnect); the browser drops it when the
+// tab closes, without relying on unload events (Firefox loses the beacon of the first pagehide
+// listener when a tab closes). A close beacon on pagehide is kept as a faster path, and tabs of
+// older pages that only send open/heartbeat/close messages still work. With no tab left, Cockpit
+// waits GRACE_MS, so a reload or a quick reopen keeps it running, then stops. A message-only tab
+// that vanished without a close counts as gone after STALE_MS without heartbeats; a connected tab
+// never goes stale.
 export const TAB_PRESENCE_GRACE_MS = 10_000
 export const TAB_PRESENCE_STALE_MS = 10 * 60_000
 const MAX_TABS = 200
@@ -20,6 +23,10 @@ export interface TabPresenceOptions {
 
 const TAB_ID_PATTERN = /^[A-Za-z0-9-]{8,64}$/
 
+export function isTabId(value: string) {
+  return TAB_ID_PATTERN.test(value)
+}
+
 export function parseTabPresenceMessage(raw: string): { id: string; event: TabPresenceEvent } | null {
   let value: unknown
   try {
@@ -29,7 +36,7 @@ export function parseTabPresenceMessage(raw: string): { id: string; event: TabPr
   }
   if (typeof value !== 'object' || value === null) return null
   const { id, event } = value as Record<string, unknown>
-  if (typeof id !== 'string' || !TAB_ID_PATTERN.test(id)) return null
+  if (typeof id !== 'string' || !isTabId(id)) return null
   if (event !== 'open' && event !== 'heartbeat' && event !== 'close') return null
   return { id, event }
 }
@@ -42,6 +49,8 @@ function defaultTimer(callback: () => void, ms: number) {
 
 export class TabPresence {
   private readonly tabs = new Map<string, number>()
+  // Open WebSocket connections per tab; a tab can briefly have two while it reconnects.
+  private readonly connections = new Map<string, number>()
   private readonly options: Required<Omit<TabPresenceOptions, 'onLastTabClosed'>> & Pick<TabPresenceOptions, 'onLastTabClosed'>
   private shutdownTimer: { cancel: () => void } | null = null
   private sweepTimer: { cancel: () => void } | null = null
@@ -63,7 +72,8 @@ export class TabPresence {
 
   record(id: string, event: TabPresenceEvent) {
     if (event === 'close') {
-      this.tabs.delete(id)
+      // An open connection is the better evidence: the tab is still there.
+      if (!this.connections.has(id)) this.tabs.delete(id)
     } else if (this.tabs.has(id) || this.tabs.size < MAX_TABS) {
       this.tabs.set(id, this.options.now())
       this.seenTab = true
@@ -74,11 +84,26 @@ export class TabPresence {
     this.checkEmpty()
   }
 
-  // Drops tabs whose heartbeats stopped, then checks whether any is left.
+  connect(id: string) {
+    this.connections.set(id, (this.connections.get(id) ?? 0) + 1)
+    this.record(id, 'open')
+  }
+
+  disconnect(id: string) {
+    const remaining = (this.connections.get(id) ?? 1) - 1
+    if (remaining > 0) {
+      this.connections.set(id, remaining)
+      return
+    }
+    this.connections.delete(id)
+    this.record(id, 'close')
+  }
+
+  // Drops message-only tabs whose heartbeats stopped, then checks whether any is left.
   sweep() {
     const cutoff = this.options.now() - this.options.staleMs
     for (const [id, lastSeen] of this.tabs) {
-      if (lastSeen < cutoff) this.tabs.delete(id)
+      if (lastSeen < cutoff && !this.connections.has(id)) this.tabs.delete(id)
     }
     this.sweepTimer = null
     this.scheduleSweep()
