@@ -387,6 +387,10 @@ export function classifyActionAuditRequest(method: string, pathname: string, bod
     return { family: 'security', action: match.action, resource: resource('user', userName ?? 'user', match.server) }
   }
 
+  if (pathname === '/api/deployments/upload') {
+    return { family: 'deployment', action: 'upload', resource: resource('deployment', bodyName(body) ?? 'new') }
+  }
+
   if (pathname === '/api/jms/messages/delete' || pathname === '/api/jms/messages/produce') {
     const payload = typeof body === 'object' && body !== null ? body as Record<string, unknown> : {}
     const action = pathname.endsWith('/delete') ? 'delete' : 'produce'

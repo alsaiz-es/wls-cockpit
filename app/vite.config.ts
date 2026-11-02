@@ -8,7 +8,7 @@ import {
   normalizeWlsTarget,
 } from './src/api/proxy-target.ts'
 import { defaultWlsVersion, type WlsVersion } from './src/api/wls-version.ts'
-import { handleJmsJmxRequest, proxyWlsRequest } from './server/http.ts'
+import { handleDeploymentUploadRequest, handleJmsJmxRequest, proxyWlsRequest } from './server/http.ts'
 
 function requestHeader(req: IncomingMessage, name: string) {
   const value = req.headers[name.toLowerCase()]
@@ -31,13 +31,17 @@ function wlsProxyPlugin(targetUrl: string, defaultVersion: WlsVersion): Plugin {
     name: 'wls-cockpit-dev-wls-proxy',
     configureServer(server) {
       server.middlewares.use((req: IncomingMessage, res: ServerResponse, next) => {
-        if (!req.url?.startsWith('/api/wls') && !req.url?.startsWith('/api/jms')) {
+        if (!req.url?.startsWith('/api/wls') && !req.url?.startsWith('/api/jms') && !req.url?.startsWith('/api/deployments')) {
           next()
           return
         }
 
         const target = requestTarget(req, targetUrl)
-        const handler = req.url.startsWith('/api/jms') ? handleJmsJmxRequest : proxyWlsRequest
+        const handler = req.url.startsWith('/api/jms')
+          ? handleJmsJmxRequest
+          : req.url.startsWith('/api/deployments')
+            ? handleDeploymentUploadRequest
+            : proxyWlsRequest
         void handler(req, res, { targetUrl: target, defaultVersion }).catch((error: unknown) => {
           const message = error instanceof Error ? error.message : 'Unexpected proxy error.'
           sendProxyError(res, 502, message)

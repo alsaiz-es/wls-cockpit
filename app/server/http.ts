@@ -40,6 +40,13 @@ import {
 } from './jms-jmx-contract.ts'
 import { invokeJmsJmxHelper, jmsJmxErrorResponse } from './jms-jmx.ts'
 import {
+  DEPLOYMENT_UPLOAD_PATH,
+  deploymentUploadUpstreamPath,
+  multipartBodyStream,
+  multipartEnvelope,
+  validateDeploymentUploadRequest,
+} from './deployment-upload.ts'
+import {
   readConnectionProfileCatalog,
   writeConnectionProfileCatalog,
   type ConnectionProfileStoreOptions,
@@ -379,6 +386,79 @@ export async function proxyWlsRequest(req: IncomingMessage, res: ServerResponse,
   res.end(upstreamBody)
 }
 
+// Streams an archive from the browser to WebLogic as a multipart deployment (see
+// deployment-upload.ts). Audited like the other deployment actions.
+export async function handleDeploymentUploadRequest(req: IncomingMessage, res: ServerResponse, options: CockpitServerOptions) {
+  const url = new URL(req.url ?? '/', 'http://localhost')
+  if (url.pathname !== DEPLOYMENT_UPLOAD_PATH) {
+    sendJson(res, 404, { error: 'Deployment endpoint not found.' })
+    return
+  }
+  if (req.method !== 'POST') {
+    sendJson(res, 405, { error: 'Deployment upload requires POST.' })
+    return
+  }
+  if (options.readOnlyDemoMode === true) {
+    req.resume()
+    sendJson(res, 403, { error: 'Deployment upload is disabled in demo read-only mode.' })
+    return
+  }
+  const target = resolveProxyTarget(req, options.targetUrl)
+  if (!target.ok) {
+    req.resume()
+    sendJson(res, 400, { error: target.error })
+    return
+  }
+  const authorization = headerValue(req, 'authorization')
+  if (!readBasicAuthHeader(authorization).ok) {
+    req.resume()
+    sendJson(res, 401, { error: 'WebLogic credentials are required.' })
+    return
+  }
+  const upload = validateDeploymentUploadRequest(req, url.searchParams)
+  if (!upload.ok) {
+    req.resume()
+    sendJson(res, upload.status, { error: upload.message })
+    return
+  }
+
+  const { version, model, fileName, size } = upload.value
+  const auditAction = classifyActionAuditRequest('POST', DEPLOYMENT_UPLOAD_PATH, model)
+  const auditDraft = auditAction
+    ? createAuditDraft({ req, method: 'POST', pathname: DEPLOYMENT_UPLOAD_PATH, target, action: auditAction })
+    : null
+  const { boundary, head, tail } = multipartEnvelope(model, fileName)
+  let upstream: Response
+  let upstreamBody: Buffer
+  try {
+    upstream = await fetch(new URL(deploymentUploadUpstreamPath(version), target.targetUrl), {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        Authorization: authorization ?? '',
+        'X-Requested-By': 'wls-cockpit',
+        'Content-Type': `multipart/form-data; boundary=${boundary}`,
+        'Content-Length': String(head.byteLength + size + tail.byteLength),
+      },
+      body: multipartBodyStream(req, head, tail, size),
+      duplex: 'half',
+    } as RequestInit & { duplex: 'half' })
+    upstreamBody = Buffer.from(await upstream.arrayBuffer())
+  } catch (error) {
+    await writeAuditForError(options, auditDraft, error)
+    const message = error instanceof Error ? error.message : 'Deployment upload failed.'
+    sendJson(res, 502, { error: message })
+    return
+  }
+
+  res.statusCode = upstream.status
+  const contentType = upstream.headers.get('content-type')
+  if (contentType) res.setHeader('Content-Type', contentType)
+  res.setHeader('Content-Length', upstreamBody.byteLength)
+  await writeAuditForResponse(options, auditDraft, upstream.status, upstreamBody, upstream.statusText)
+  res.end(upstreamBody)
+}
+
 // JNDI over T3 for releases whose REST API has no JNDI resource (12.2.1.4). Read-only, so it
 // is not audited; it needs the same local WebLogic client as JMS message operations.
 export async function handleJndiT3Request(req: IncomingMessage, res: ServerResponse, options: CockpitServerOptions) {
@@ -634,6 +714,10 @@ export function createCockpitServer(options: CockpitServerOptions): Server {
       }
       if (req.url?.startsWith('/api/jms')) {
         await handleJmsJmxRequest(req, res, options)
+        return
+      }
+      if (req.url?.startsWith('/api/deployments')) {
+        await handleDeploymentUploadRequest(req, res, options)
         return
       }
       if (req.url?.startsWith('/api/audit')) {

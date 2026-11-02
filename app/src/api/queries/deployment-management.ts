@@ -1,5 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { createClient12, createClient14, wlsCredentialCacheKey, type WlsCredentials } from '@/api/client'
+import { DEPLOYMENT_UPLOAD_PATH, MAX_DEPLOYMENT_UPLOAD_BYTES } from '@/api/deployment-upload-contract'
+import { deploymentUploadRequestInit } from './deployment-upload'
+export { deploymentNameFromFileName } from './deployment-upload'
 import { createWlsHttpError, WlsRestError, withWlsRestTimeout } from '@/api/wls-errors'
 import { fetchDeploymentProgressObject } from './deployment-lifecycle'
 import { deploymentStateLabel, settleDeploymentProgress } from './deployment-progress'
@@ -14,10 +17,15 @@ export interface DeploymentTargetChoice extends DeploymentTargetRef {
   id: string
 }
 
+export type DeploymentSource = 'path' | 'upload'
+
 export interface DeployApplicationInput {
   name: string
+  // 'path': an archive already on the AdminServer host; 'upload': a file from this computer.
+  source?: DeploymentSource
   applicationPath: string
   planPath: string
+  file?: File | null
   targets: DeploymentTargetRef[]
 }
 
@@ -30,6 +38,8 @@ export interface DeploymentConfigResult {
 }
 
 const DEPLOYMENT_CONFIG_TIMEOUT_MS = 60_000
+// Uploading and staging a large archive takes far longer than a configuration call.
+const DEPLOYMENT_UPLOAD_TIMEOUT_MS = 15 * 60_000
 
 function clientFor(creds: WlsCredentials) {
   return creds.version === '14.1.2.0.0' ? createClient14(creds) : createClient12(creds)
@@ -209,10 +219,40 @@ export function useDeploymentTargetChoices() {
   })
 }
 
+async function uploadApplication(
+  creds: WlsCredentials,
+  deploymentName: string,
+  targets: DeploymentTargetRef[],
+  file: File,
+) {
+  if (file.size === 0) throw new Error('The selected archive is empty.')
+  if (file.size > MAX_DEPLOYMENT_UPLOAD_BYTES) throw new Error('The selected archive is larger than 2 GiB.')
+  const label = `Upload ${deploymentName}`
+  const query = new URLSearchParams({ version: creds.version })
+  const response = await withWlsRestTimeout(
+    label,
+    (signal) => fetch(`${DEPLOYMENT_UPLOAD_PATH}?${query}`, { ...deploymentUploadRequestInit(creds, deploymentName, targets, file), signal }),
+    DEPLOYMENT_UPLOAD_TIMEOUT_MS,
+  )
+  if (!response.ok) throw createWlsHttpError(label, response, await response.json().catch(() => undefined))
+}
+
 export async function deployApplication(
   creds: WlsCredentials,
   input: DeployApplicationInput,
 ): Promise<DeploymentConfigResult> {
+  if (input.source === 'upload') {
+    const deploymentName = input.name.trim()
+    if (!deploymentName) throw new Error('Deployment name is required.')
+    if (!input.file) throw new Error('Choose the archive to upload.')
+    if (input.targets.length === 0) throw new Error('At least one target is required.')
+    const file = input.file
+    return withEditSession(creds, async () => {
+      await uploadApplication(creds, deploymentName, input.targets, file)
+      return configResult('deploy', deploymentName, input.targets)
+    })
+  }
+
   const deploymentName = input.name.trim()
   const applicationPath = input.applicationPath.trim()
   const planPath = input.planPath.trim()

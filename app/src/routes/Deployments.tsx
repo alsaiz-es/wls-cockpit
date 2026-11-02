@@ -5,10 +5,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { readOnlyDemoModeEnabled } from '@/api/runtime-config'
 import {
   deployApplication,
+  deploymentNameFromFileName,
   undeployApplication,
   updateDeploymentTargets,
   useDeploymentTargetChoices,
   type DeployApplicationInput,
+  type DeploymentSource,
   type DeploymentConfigAction,
   type DeploymentConfigResult,
   type DeploymentTargetChoice,
@@ -250,8 +252,10 @@ function selectedTargets(keys: string[], choices: DeploymentTargetChoice[]) {
 function initialDeployForm() {
   return {
     name: '',
+    source: 'upload' as DeploymentSource,
     applicationPath: '',
     planPath: '',
+    file: null as File | null,
     targetKeys: [] as string[],
   }
 }
@@ -658,8 +662,10 @@ export function Deployments() {
       action: 'deploy',
       input: {
         name: deployForm.name,
+        source: deployForm.source,
         applicationPath: deployForm.applicationPath,
         planPath: deployForm.planPath,
+        file: deployForm.file,
         targets,
       },
     })
@@ -1088,34 +1094,89 @@ export function Deployments() {
 
       {showDeployForm && !readOnlyDemoMode ? (
         <div className="mb-3 border border-border bg-surface-1/40 p-3">
-          <p className="text-muted-foreground mb-2 text-[13px] leading-[18px]">
-            Deploys an archive or exploded directory that already exists on the AdminServer host; Cockpit does not upload
-            files. Enter the path as the AdminServer sees it (for example <MonoText>/u01/apps/orders.war</MonoText>), pick
-            at least one target, and WebLogic stages it from there. The plan path is optional.
-          </p>
-          <div className="grid gap-2 md:grid-cols-[minmax(160px,0.8fr)_minmax(220px,1.3fr)_minmax(160px,0.8fr)]">
-            <Input
-              aria-label="Deployment name"
-              placeholder="Deployment name"
-              value={deployForm.name}
-              onChange={(event) => setDeployForm((current) => ({ ...current, name: event.target.value }))}
-              className="h-8 rounded-[4px] font-mono text-[13px]"
-            />
-            <Input
-              aria-label="AdminServer application path"
-              placeholder="AdminServer path: /u01/apps/app.war"
-              value={deployForm.applicationPath}
-              onChange={(event) => setDeployForm((current) => ({ ...current, applicationPath: event.target.value }))}
-              className="h-8 rounded-[4px] font-mono text-[13px]"
-            />
-            <Input
-              aria-label="Deployment plan path"
-              placeholder="Plan path (optional)"
-              value={deployForm.planPath}
-              onChange={(event) => setDeployForm((current) => ({ ...current, planPath: event.target.value }))}
-              className="h-8 rounded-[4px] font-mono text-[13px]"
-            />
+          <div className="mb-2 flex flex-wrap items-center gap-3 text-[13px] leading-[18px]" role="radiogroup" aria-label="Deployment source">
+            {(
+              [
+                ['upload', 'Upload from this computer'],
+                ['path', 'Path on the AdminServer host'],
+              ] as const
+            ).map(([source, label]) => (
+              <label key={source} className="flex h-8 items-center gap-2">
+                <input
+                  type="radio"
+                  name="deployment-source"
+                  className="accent-primary size-3.5"
+                  checked={deployForm.source === source}
+                  onChange={() => setDeployForm((current) => ({ ...current, source }))}
+                />
+                {label}
+              </label>
+            ))}
           </div>
+          <p className="text-muted-foreground mb-2 text-[13px] leading-[18px]">
+            {deployForm.source === 'upload' ? (
+              <>
+                Uploads a <MonoText>.war</MonoText>, <MonoText>.ear</MonoText>, <MonoText>.jar</MonoText> or{' '}
+                <MonoText>.rar</MonoText> archive (up to 2 GiB) to the AdminServer, which stores it and deploys it to the
+                targets you pick.
+              </>
+            ) : (
+              <>
+                Deploys an archive or exploded directory that already exists on the AdminServer host. Enter the path as the
+                AdminServer sees it (for example <MonoText>/u01/apps/orders.war</MonoText>) and WebLogic stages it from
+                there. The plan path is optional.
+              </>
+            )}
+          </p>
+          {deployForm.source === 'upload' ? (
+            <div className="grid gap-2 md:grid-cols-[minmax(160px,0.8fr)_minmax(220px,2.1fr)]">
+              <Input
+                aria-label="Deployment name"
+                placeholder="Deployment name"
+                value={deployForm.name}
+                onChange={(event) => setDeployForm((current) => ({ ...current, name: event.target.value }))}
+                className="h-8 rounded-[4px] font-mono text-[13px]"
+              />
+              <Input
+                type="file"
+                aria-label="Archive to upload"
+                accept=".war,.ear,.jar,.rar"
+                onChange={(event) => {
+                  const file = event.target.files?.[0] ?? null
+                  setDeployForm((current) => ({
+                    ...current,
+                    file,
+                    name: current.name.trim() || !file ? current.name : deploymentNameFromFileName(file.name),
+                  }))
+                }}
+                className="h-8 rounded-[4px] py-1 font-mono text-[13px]"
+              />
+            </div>
+          ) : (
+            <div className="grid gap-2 md:grid-cols-[minmax(160px,0.8fr)_minmax(220px,1.3fr)_minmax(160px,0.8fr)]">
+              <Input
+                aria-label="Deployment name"
+                placeholder="Deployment name"
+                value={deployForm.name}
+                onChange={(event) => setDeployForm((current) => ({ ...current, name: event.target.value }))}
+                className="h-8 rounded-[4px] font-mono text-[13px]"
+              />
+              <Input
+                aria-label="AdminServer application path"
+                placeholder="AdminServer path: /u01/apps/app.war"
+                value={deployForm.applicationPath}
+                onChange={(event) => setDeployForm((current) => ({ ...current, applicationPath: event.target.value }))}
+                className="h-8 rounded-[4px] font-mono text-[13px]"
+              />
+              <Input
+                aria-label="Deployment plan path"
+                placeholder="Plan path (optional)"
+                value={deployForm.planPath}
+                onChange={(event) => setDeployForm((current) => ({ ...current, planPath: event.target.value }))}
+                className="h-8 rounded-[4px] font-mono text-[13px]"
+              />
+            </div>
+          )}
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
             <TargetCheckboxes
               choices={targetChoices}

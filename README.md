@@ -18,8 +18,8 @@ running domain:
 - **Servers** — state, JVM heap and threads per server; start, shut down, suspend and resume
   several servers at once; stuck threads, thread dumps and live metrics per server; which servers
   need a restart to apply activated changes.
-- **Deployments** — state per target, start / stop / redeploy, deploy from an AdminServer-side
-  path, undeploy and target management.
+- **Deployments** — state per target, start / stop / redeploy, deploy by uploading an archive
+  from your machine or from an AdminServer-side path, undeploy and target management.
 - **Data sources** — live pool statistics, test and reset pool, guided connection settings.
 - **Logs** — a unified tail across servers with severity, server and text filters.
 - **JMS** — servers and destinations inventory; optional message browse, detail, delete and
