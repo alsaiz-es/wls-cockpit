@@ -145,7 +145,7 @@ export function ServerPressurePanel({
               serverMetricResourceId(row.server.name),
               'heap.percent',
             )}
-            value={<HeapBar heap={row.server.heap} />}
+            value={<HeapBar heap={row.server.heap} alertLevel={snapshot.serverAlerts?.[row.server.name]?.heap} />}
             title={`${row.server.name} heap`}
           />
         ),
@@ -238,7 +238,7 @@ export function ServerPressurePanel({
         ),
       },
     ],
-    [metricScopeKey],
+    [metricScopeKey, snapshot.serverAlerts],
   )
 
   return (

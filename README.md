@@ -140,20 +140,26 @@ a while, so a single busy reading (a startup burst, a GC pause) is not an issue:
 | `threads.pending` — pending user requests | ≥ 5 | ≥ 20 | 1 min |
 | `threads.hogging` — hogging threads | ≥ 5 | — | 2 min |
 | `threads.stuck` — stuck threads | — | ≥ 1 | immediately |
-| `heap.percent` — heap used, % of max | ≥ 85 | ≥ 95 | 2 min |
+| `heap.percent` — heap that never drops below the threshold | ≥ 90 | — | 15 min |
 | `jdbc.waiting` — requests waiting for a connection | ≥ 1 | ≥ 5 | 30 s |
 | `jdbc.utilization` — active connections, % of max capacity | ≥ 85 | ≥ 95 | 1 min |
 | `jdbc.leaked` — new leaked connections | ≥ 1 | — | within 10 min |
 | `jms.noConsumers` — messages on a destination without consumers | ≥ 1 | — | 5 min |
 | `jms.backlog` — current plus pending messages on a destination | ≥ 1,000 | ≥ 10,000 | 5 min |
 
-States WebLogic reports itself (failed or overloaded servers and pools, paused destinations,
-unhealthy deployments) always alert at once. List pages, badges and heap bars colour the current
-reading with the same thresholds.
+Heap usage that climbs to 100 % and drops after a garbage collection is normal, so the heap rule
+only fires when the heap stays high for the whole duration; WebLogic itself marks a server
+overloaded when free memory falls below its overload-protection threshold, and that alerts at
+once. States WebLogic reports itself (failed or overloaded servers and pools, paused
+destinations, unhealthy deployments) always alert at once. List pages and badges colour the
+current reading with the same thresholds; heap bars and the dashboard's thread and heap figures
+only change colour while their alert is active.
 
-To change them, create `~/.wls-cockpit/alerts.yaml` (or `alerts.yaml` in `WLS_COCKPIT_DATA_DIR`).
-Keep only what you change; `null` turns a level off, and `domains` applies to one connection,
-by its name in Cockpit:
+Change the thresholds on the **Alert Rules** page (Operations): edit them for all connections or
+for the current one, and list resources to ignore. Cockpit saves them to
+`~/.wls-cockpit/alerts.yaml` (or `alerts.yaml` in `WLS_COCKPIT_DATA_DIR`), keeping comments and
+the entries you did not touch. The file can also be edited by hand; keep only what you change,
+`null` turns a level off, and `domains` applies to one connection, by its name in Cockpit:
 
 ```yaml
 version: 1
@@ -168,9 +174,10 @@ domains:
       jms.noConsumers: { for: 30m }
 ```
 
-Cockpit reads the file again when it changes. The **Alert Rules** page shows the thresholds in
-force, where each one comes from and any error in the file with its line; invalid entries are
-skipped and the rest still apply.
+Cockpit reads the file again when it changes. The Alert Rules page shows the thresholds in
+force, where each one is set and any error in the file with its line; invalid entries are
+skipped and the rest still apply. A file that is not valid YAML has to be fixed by hand before
+the page can save again, and a save is refused if the file changed since the page loaded it.
 
 ## Supported WebLogic versions
 

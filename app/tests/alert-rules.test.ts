@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
@@ -92,11 +92,22 @@ test('a gap in readings restarts the duration', () => {
   assert.equal(tracker.level('heap', rule, 90, resumedAt + rule.forMs), 'warning')
 })
 
-test('heap pressure is a JVM issue after the rule duration', () => {
+test('a heap that peaks at 100% and drops after a collection never alerts', () => {
   const tracker = new AlertSustainTracker()
-  assert.deepEqual(pressureIssues(tracker, [server({}, 97)], 0), [])
-  for (let seconds = 10; seconds < 120; seconds += 10) pressureIssues(tracker, [server({}, 97)], seconds * SECOND)
-  assert.deepEqual(pressureIssues(tracker, [server({}, 97)], 120 * SECOND), [['heap:AdminServer', 'critical']])
+  // A sawtooth: climbs to 100 % over five readings, a collection brings it back to 55 %.
+  const sawtooth = [70, 80, 90, 97, 100, 55]
+  for (let reading = 0; reading < 180; reading += 1) {
+    const issues = pressureIssues(tracker, [server({}, sawtooth[reading % sawtooth.length])], reading * 10 * SECOND)
+    assert.deepEqual(issues, [], `reading ${reading}`)
+  }
+})
+
+test('a heap that never drops below the threshold is a JVM warning after 15 minutes, never critical', () => {
+  const tracker = new AlertSustainTracker()
+  const forMs = DEFAULT_ALERT_RULES['heap.percent'].forMs
+  assert.equal(forMs, 15 * 60 * SECOND)
+  for (let now = 0; now < forMs; now += 10 * SECOND) assert.deepEqual(pressureIssues(tracker, [server({}, 99)], now), [])
+  assert.deepEqual(pressureIssues(tracker, [server({}, 99)], forMs), [['heap:AdminServer', 'warning']])
 })
 
 test('without a tracker each reading is judged on its own', () => {
@@ -215,7 +226,7 @@ test('domain overrides win over the file, which wins over the defaults', () => {
   })
   const lab = resolveAlertRules(config, 'lab-1412')
   assert.equal(lab.rules['heap.percent'].warning, 90)
-  assert.equal(lab.rules['heap.percent'].critical, 95)
+  assert.equal(lab.rules['heap.percent'].critical, null)
   assert.equal(lab.rules['heap.percent'].source, 'domain')
   assert.equal(lab.rules['jms.backlog'].critical, null)
   assert.equal(lab.rules['jms.backlog'].source, 'file')
@@ -290,4 +301,78 @@ test('the config the server sends validates again in the browser unchanged', () 
   const again = validateAlertRulesConfig(alertRulesConfigToFileShape(sent))
   assert.deepEqual(again.errors, [])
   assert.deepEqual(again.config, config)
+})
+
+test('saving from the editor keeps comments and only touches what changed', async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'wls-cockpit-alerts-'))
+  try {
+    const file = path.join(dir, 'alerts.yaml')
+    await writeFile(
+      file,
+      [
+        '# Team thresholds — keep in sync with the runbook',
+        'version: 1',
+        'rules:',
+        '  heap.percent: { warning: 92 } # agreed with the app team',
+        '  threads.bogus: { warning: 1 }',
+        'domains:',
+        '  Prod:',
+        '    rules:',
+        '      jms.backlog: { warning: 5000 }',
+        '',
+      ].join('\n'),
+    )
+    const store = new AlertRulesStore({ dataDir: dir })
+    const loaded = await store.read()
+    const { config } = validateAlertRulesConfig({
+      rules: { 'heap.percent': { warning: 92, for: '20m' }, 'threads.pending': { warning: 8 } },
+      ignore: [{ jms: 'Test!*' }],
+      domains: { Prod: { rules: {} }, Lab: { rules: { 'threads.hogging': { enabled: false } } } },
+    })
+
+    const saved = await store.write(loaded.revision, config)
+    assert.equal(saved.ok, true)
+    const text = await readFile(file, 'utf8')
+    assert.match(text, /^# Team thresholds — keep in sync with the runbook/)
+    assert.match(text, /heap\.percent: \{ warning: 92, for: 20m \} # agreed with the app team/)
+    assert.match(text, /threads\.pending: \{ warning: 8 \}/)
+    assert.doesNotMatch(text, /threads\.bogus/)
+    assert.doesNotMatch(text, /Prod/)
+    assert.match(text, /Lab:\n {4}rules:\n {6}threads\.hogging: \{ enabled: false \}/)
+    assert.match(text, /ignore:\n {2}- jms: Test!\*/)
+    if (saved.ok) {
+      assert.deepEqual(saved.state.errors, [])
+      assert.equal(saved.state.config.rules['heap.percent']?.forMs, 20 * 60 * SECOND)
+    }
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
+test('saving is refused when the file changed meanwhile or is not valid YAML', async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'wls-cockpit-alerts-'))
+  try {
+    const file = path.join(dir, 'alerts.yaml')
+    const store = new AlertRulesStore({ dataDir: dir })
+    const empty = await store.read()
+    assert.equal(empty.revision, 'none')
+    const { config } = validateAlertRulesConfig({ rules: { 'heap.percent': { warning: 95 } } })
+
+    const created = await store.write(empty.revision, config)
+    assert.equal(created.ok, true)
+    assert.match(await readFile(file, 'utf8'), /^# WLS Cockpit alert thresholds/)
+
+    const stale = await store.write(empty.revision, config)
+    assert.equal(stale.ok, false)
+    if (!stale.ok) assert.equal(stale.reason, 'conflict')
+
+    await writeFile(file, 'rules:\n  heap.percent: { warning: 95\n')
+    const broken = await store.read()
+    const refused = await store.write(broken.revision, config)
+    assert.equal(refused.ok, false)
+    if (!refused.ok) assert.equal(refused.reason, 'unparseable')
+    assert.equal(await readFile(file, 'utf8'), 'rules:\n  heap.percent: { warning: 95\n')
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
 })

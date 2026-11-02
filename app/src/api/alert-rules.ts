@@ -47,9 +47,10 @@ export const ALERT_RULE_INFO: Record<AlertRuleId, { label: string; unit: string;
     description: 'Threads past the stuck thread max time (600 s by default), per server.',
   },
   'heap.percent': {
-    label: 'Heap used',
+    label: 'Heap stays high',
     unit: '%',
-    description: 'Used heap as a share of the maximum heap, per server.',
+    description:
+      'Used heap that never drops below the threshold during the whole duration: garbage collection is not reclaiming memory. Peaks up to 100 % that fall after a collection are normal.',
   },
   'jdbc.waiting': {
     label: 'Waiting for a connection',
@@ -83,7 +84,9 @@ export const DEFAULT_ALERT_RULES: Record<AlertRuleId, AlertRule> = {
   'threads.pending': { enabled: true, warning: 5, critical: 20, forMs: 60_000 },
   'threads.hogging': { enabled: true, warning: 5, critical: null, forMs: 120_000 },
   'threads.stuck': { enabled: true, warning: null, critical: 1, forMs: 0 },
-  'heap.percent': { enabled: true, warning: 85, critical: 95, forMs: 120_000 },
+  // Only a heap that never comes down is a signal. Critical is left to WebLogic itself, which marks
+  // the server overloaded when free memory falls below OverloadProtection's low threshold.
+  'heap.percent': { enabled: true, warning: 90, critical: null, forMs: 900_000 },
   'jdbc.waiting': { enabled: true, warning: 1, critical: 5, forMs: 30_000 },
   'jdbc.utilization': { enabled: true, warning: 85, critical: 95, forMs: 60_000 },
   'jdbc.leaked': { enabled: true, warning: 1, critical: null, forMs: 600_000 },
@@ -310,6 +313,21 @@ function hasFields(override: AlertRuleOverride | undefined) {
   return !!override && Object.keys(override).length > 0
 }
 
+// Drops rule entries without fields and domains without rules or ignores, which a file never
+// keeps; the editor sends its state through this before saving.
+export function compactAlertRulesConfig(config: AlertRulesConfig): AlertRulesConfig {
+  const compactScope = (scope: AlertRulesScope): AlertRulesScope => ({
+    rules: Object.fromEntries(Object.entries(scope.rules).filter(([, rule]) => hasFields(rule))),
+    ignore: scope.ignore,
+  })
+  const domains = Object.fromEntries(
+    Object.entries(config.domains)
+      .map(([name, scope]) => [name, compactScope(scope)] as const)
+      .filter(([, scope]) => Object.keys(scope.rules).length > 0 || scope.ignore.length > 0),
+  )
+  return { version: config.version, ...compactScope(config), domains }
+}
+
 export function resolveAlertRules(config: AlertRulesConfig | null | undefined, domainName?: string | null): ResolvedAlertRules {
   const domain = domainName ? config?.domains[domainName] : undefined
   const rules = Object.fromEntries(
@@ -462,7 +480,7 @@ export function alertRulesExampleYaml() {
     'domains:',
     '  my-lab:',
     '    rules:',
-    '      heap.percent: { warning: 90 }',
+    '      heap.percent: { warning: 95 }',
   ]
   return `${lines.join('\n')}\n`
 }

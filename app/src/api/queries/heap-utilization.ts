@@ -1,4 +1,4 @@
-import { alertRuleLevel, getActiveAlertRules, type ResolvedAlertRules } from '../alert-rules.ts'
+import { getActiveAlertRules, type AlertLevel, type ResolvedAlertRules } from '../alert-rules.ts'
 
 export interface HeapUsage {
   current: number
@@ -50,15 +50,12 @@ export function heapUtilizationLabel(heap: HeapUsage | null | undefined) {
 
 export type HeapTone = 'positive' | 'warning' | 'negative' | 'neutral'
 
-// Colours follow the heap.percent alert rule (85 % and 95 % by default), judged on this reading.
-export function heapToneForPercent(
-  percent: number | null | undefined,
-  rules: ResolvedAlertRules = getActiveAlertRules(),
-): HeapTone {
+// Heap usage reaching 100 % and dropping after a collection is normal, so a single reading never
+// colours the bar: it turns amber or red only while the heap.percent alert is active for the server.
+export function heapToneForPercent(percent: number | null | undefined, alertLevel: AlertLevel | null = null): HeapTone {
   if (typeof percent !== 'number' || !Number.isFinite(percent)) return 'neutral'
-  const level = alertRuleLevel(rules.rules['heap.percent'], percent)
-  if (level === 'critical') return 'negative'
-  if (level === 'warning') return 'warning'
+  if (alertLevel === 'critical') return 'negative'
+  if (alertLevel === 'warning') return 'warning'
   return 'positive'
 }
 
@@ -82,7 +79,6 @@ export interface HeapSegments {
   committedPercent: number
   committedUnusedPercent: number
   emptyPercent: number
-  tone: HeapTone
 }
 
 export function heapSegments(heap: HeapUsage | null | undefined): HeapSegments | null {
@@ -102,6 +98,5 @@ export function heapSegments(heap: HeapUsage | null | undefined): HeapSegments |
     committedPercent,
     committedUnusedPercent: committedPercent - usedPercent,
     emptyPercent: 100 - committedPercent,
-    tone: heapToneForPercent(usedPercent),
   }
 }

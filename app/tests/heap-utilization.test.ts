@@ -28,7 +28,6 @@ test('normalizes WebLogic heap fields with used-over-max formula', () => {
     committedPercent: 50,
     committedUnusedPercent: 12.5,
     emptyPercent: 50,
-    tone: 'positive',
   })
 })
 
@@ -42,19 +41,16 @@ test('rejects invalid heap inputs and clamps utilization labels', () => {
   assert.equal(heapSegments({ current: 1, committed: 2, max: 0 }), null)
 })
 
-test('heap tone follows the heap.percent rule: 85 and 95 percent by default', () => {
-  assert.equal(heapToneForPercent(84.99), 'positive')
-  assert.equal(heapToneForPercent(85), 'warning')
-  assert.equal(heapToneForPercent(94.99), 'warning')
-  assert.equal(heapToneForPercent(95), 'negative')
-  assert.equal(heapToneForPercent(null), 'neutral')
-  assert.deepEqual(heapThresholdMarks(), [85, 95])
+test('heap bars take their colour from the alert level, never from the reading alone', () => {
+  assert.equal(heapToneForPercent(99), 'positive')
+  assert.equal(heapToneForPercent(99, 'warning'), 'warning')
+  assert.equal(heapToneForPercent(60, 'critical'), 'negative')
+  assert.equal(heapToneForPercent(null, 'warning'), 'neutral')
+  assert.deepEqual(heapThresholdMarks(), [90])
 
-  const { config } = validateAlertRulesConfig({ rules: { 'heap.percent': { warning: 75, critical: null } } })
-  const rules = resolveAlertRules(config, null)
-  assert.equal(heapToneForPercent(80, rules), 'warning')
-  assert.equal(heapToneForPercent(99, rules), 'warning')
-  assert.deepEqual(heapThresholdMarks(rules), [75])
+  const { config } = validateAlertRulesConfig({ rules: { 'heap.percent': { warning: 75, critical: 95 } } })
+  assert.deepEqual(heapThresholdMarks(resolveAlertRules(config, null)), [75, 95])
+  assert.deepEqual(heapThresholdMarks(resolveAlertRules(validateAlertRulesConfig({ rules: { 'heap.percent': { enabled: false } } }).config, null)), [])
 })
 
 test('committed-aware heap segments clamp display values', () => {
@@ -66,7 +62,6 @@ test('committed-aware heap segments clamp display values', () => {
     committedPercent: 50,
     committedUnusedPercent: 0,
     emptyPercent: 50,
-    tone: 'positive',
   })
 
   assert.deepEqual(heapSegments({ current: 50, committed: 80, max: 100 }), {
@@ -77,7 +72,6 @@ test('committed-aware heap segments clamp display values', () => {
     committedPercent: 80,
     committedUnusedPercent: 30,
     emptyPercent: 20,
-    tone: 'positive',
   })
 
   assert.deepEqual(heapSegments({ current: 120, committed: 150, max: 100 }), {
@@ -88,6 +82,5 @@ test('committed-aware heap segments clamp display values', () => {
     committedPercent: 100,
     committedUnusedPercent: 0,
     emptyPercent: 0,
-    tone: 'negative',
   })
 })

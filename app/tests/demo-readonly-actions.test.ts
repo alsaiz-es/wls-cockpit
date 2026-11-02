@@ -89,3 +89,34 @@ test('debug flag changes are offered in normal mode and removed in demo read-onl
   assert.equal(debugFlagsEditable(snapshot), true)
   assert.equal(debugFlagsEditable(snapshot, { readOnlyDemoMode: true }), false)
 })
+
+test('alert rule editing is offered in normal mode and removed in demo read-only mode', async () => {
+  const { canEditAlertRules } = await import('../src/routes/alert-rules-editor-model.ts')
+  const file = { available: true, exists: true, revision: '1-10', errors: [] }
+  assert.equal(canEditAlertRules(file), true)
+  assert.equal(canEditAlertRules(file, { readOnlyDemoMode: true }), false)
+  assert.equal(canEditAlertRules({ ...file, errors: [{ path: [] }] }), false)
+  assert.equal(canEditAlertRules({ ...file, errors: [{ path: ['rules', 'heap.percent', 'warning'] }] }), true)
+  assert.equal(canEditAlertRules({ ...file, available: false }), false)
+
+  const { handleAlertRulesRequest } = await import('../server/http.ts')
+  const { Readable } = await import('node:stream')
+  const req = Object.assign(Readable.from([Buffer.from('{"revision":"none","config":{}}')]), {
+    method: 'PUT',
+    url: '/__wls-cockpit/alert-rules',
+    headers: { host: '127.0.0.1:8888', 'content-type': 'application/json' },
+  })
+  let status = 0
+  let body = ''
+  const res = {
+    statusCode: 0,
+    setHeader() {},
+    end(chunk?: string) {
+      status = this.statusCode
+      body = chunk ?? ''
+    },
+  }
+  await handleAlertRulesRequest(req as never, res as never, { defaultVersion: '14.1.2.0.0', readOnlyDemoMode: true })
+  assert.equal(status, 403)
+  assert.match(body, /read-only demo mode/)
+})

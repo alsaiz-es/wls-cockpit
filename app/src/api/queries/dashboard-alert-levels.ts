@@ -78,30 +78,43 @@ function snapshotServers(serverName: string) {
   return [serverName]
 }
 
-export function buildServerPressureIssues(servers: DashboardPressureServer[], context: DashboardAlertContext): DashboardIssue[] {
+// Each server's level per thresholded signal; the scan band and heap bars take their colour from
+// these instead of from the current reading.
+export interface ServerAlertLevels {
+  pending: AlertLevel | null
+  hogging: AlertLevel | null
+  stuck: AlertLevel | null
+  heap: AlertLevel | null
+}
+
+export function evaluateServerPressure(
+  servers: DashboardPressureServer[],
+  context: DashboardAlertContext,
+): { issues: DashboardIssue[]; levels: Record<string, ServerAlertLevels> } {
   const { rules, tracker, now } = context
-  return servers.flatMap((server): DashboardIssue[] => {
-    const issues: DashboardIssue[] = []
+  const levels: Record<string, ServerAlertLevels> = {}
+  const issues = servers.flatMap((server): DashboardIssue[] => {
+    const serverIssues: DashboardIssue[] = []
+    const ignored = isAlertIgnored(rules, 'servers', server.name)
+    const serverLevels: ServerAlertLevels = { pending: null, hogging: null, stuck: null, heap: null }
 
     if (server.threads) {
       const pending = server.threads.pending ?? 0
       const hogging = server.threads.hogging ?? 0
       const stuck = server.threads.stuck
       const queue = server.threads.queueLength ?? 0
-      const stuckLevel = sustainedAlertLevel(tracker, `threads.stuck\u0000${server.name}`, rules.rules['threads.stuck'], stuck, now)
-      const level = worseAlertLevel(
-        sustainedAlertLevel(tracker, `threads.pending\u0000${server.name}`, rules.rules['threads.pending'], pending, now),
-        sustainedAlertLevel(tracker, `threads.hogging\u0000${server.name}`, rules.rules['threads.hogging'], hogging, now),
-        stuckLevel,
-      )
+      serverLevels.pending = sustainedAlertLevel(tracker, `threads.pending\u0000${server.name}`, rules.rules['threads.pending'], pending, now)
+      serverLevels.hogging = sustainedAlertLevel(tracker, `threads.hogging\u0000${server.name}`, rules.rules['threads.hogging'], hogging, now)
+      serverLevels.stuck = sustainedAlertLevel(tracker, `threads.stuck\u0000${server.name}`, rules.rules['threads.stuck'], stuck, now)
+      const level = worseAlertLevel(serverLevels.pending, serverLevels.hogging, serverLevels.stuck)
       if (level) {
-        issues.push({
+        serverIssues.push({
           id: `threads:${server.name}`,
           severity: level,
           family: 'threads',
           title: `${server.name} has execution pressure`,
           detail: `Pending ${pending}, hogging ${hogging}, stuck ${stuck}, queue ${queue}.`,
-          hint: stuckLevel
+          hint: serverLevels.stuck
             ? 'Capture evidence and inspect thread detail/logs before restarting or clearing load.'
             : 'Inspect server metrics and logs to confirm whether execute-thread pressure is sustained.',
           serverName: server.name,
@@ -113,24 +126,30 @@ export function buildServerPressureIssues(servers: DashboardPressureServer[], co
     const heapFraction = heapUtilization(server.heap)
     const heapPercent = heapFraction === null ? null : heapFraction * 100
     const heapRule = rules.rules['heap.percent']
-    const heapLevel = sustainedAlertLevel(tracker, `heap.percent\u0000${server.name}`, heapRule, heapPercent, now)
-    if (heapLevel && heapPercent !== null) {
-      issues.push({
+    serverLevels.heap = sustainedAlertLevel(tracker, `heap.percent\u0000${server.name}`, heapRule, heapPercent, now)
+    if (serverLevels.heap && heapPercent !== null) {
+      serverIssues.push({
         id: `heap:${server.name}`,
-        severity: heapLevel,
+        severity: serverLevels.heap,
         family: 'jvm',
-        title: `${server.name} heap usage is high`,
+        title: `${server.name} heap stays high`,
         detail: tracker && heapRule.forMs > 0
-          ? `Heap ${Math.round(heapPercent)}% of max for at least ${formatAlertDuration(heapRule.forMs)}.`
+          ? `Heap ${Math.round(heapPercent)}% of max; it has not dropped below the threshold for ${formatAlertDuration(heapRule.forMs)}.`
           : `Heap ${Math.round(heapPercent)}% of max.`,
-        hint: 'Open server metrics to see whether heap drops after garbage collection before taking a heap dump.',
+        hint: 'Check in server metrics whether garbage collection still reclaims memory before taking a heap dump.',
         serverName: server.name,
         snapshotServers: snapshotServers(server.name),
       })
     }
 
-    return issues
+    levels[server.name] = ignored ? { pending: null, hogging: null, stuck: null, heap: null } : serverLevels
+    return serverIssues
   })
+  return { issues, levels }
+}
+
+export function buildServerPressureIssues(servers: DashboardPressureServer[], context: DashboardAlertContext): DashboardIssue[] {
+  return evaluateServerPressure(servers, context).issues
 }
 
 // Resources listed under ignore in alerts.yaml raise neither issues nor alerts.

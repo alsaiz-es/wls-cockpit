@@ -27,11 +27,12 @@ import { applicationHealthDetail, firstHealthReason } from './deployment-health-
 import { heapUtilization } from './heap-utilization.ts'
 import { AlertSustainTracker, getActiveAlertRules } from '../alert-rules.ts'
 import {
-  buildServerPressureIssues,
+  evaluateServerPressure,
   isDashboardIssueIgnored,
   sustainedJdbcSeverity,
   sustainedJmsSeverity,
   type DashboardAlertContext,
+  type ServerAlertLevels,
 } from './dashboard-alert-levels.ts'
 
 export type DashboardSeverity = 'healthy' | 'warning' | 'critical' | 'unknown'
@@ -150,6 +151,8 @@ export interface DashboardSnapshot {
   applicationRollup: ApplicationRollup
   logs: FamilyResult<LogActivityRuntime>
   issues: DashboardIssue[]
+  // Alert level per server and thresholded signal (absent in fixtures).
+  serverAlerts?: Record<string, ServerAlertLevels>
   partialFailures: Array<{ family: DashboardFamily; resource?: string; message: string }>
 }
 
@@ -682,6 +685,7 @@ export function buildDashboardIssues(
   applications: FamilyResult<ApplicationRuntimeSummary>,
   logs: FamilyResult<LogActivityRuntime>,
   context: DashboardAlertContext = { rules: getActiveAlertRules(), tracker: null, now: Date.now() },
+  pressureIssues: DashboardIssue[] = evaluateServerPressure(servers, context).issues,
 ): DashboardIssue[] {
   const issues: DashboardIssue[] = []
 
@@ -706,7 +710,7 @@ export function buildDashboardIssues(
     }
   })
 
-  issues.push(...buildServerPressureIssues(servers, context))
+  issues.push(...pressureIssues)
 
   jdbc.items.forEach((pool) => {
     if (pool.severity === 'healthy' || pool.severity === 'unknown') return
@@ -818,7 +822,8 @@ export async function fetchDomainDashboardSnapshot(
   const context: DashboardAlertContext = { rules: getActiveAlertRules(), tracker: options.tracker ?? null, now: Date.now() }
   const jdbc = { ...rawJdbc, items: rawJdbc.items.map((pool) => ({ ...pool, severity: sustainedJdbcSeverity(pool, context) })) }
   const jms = { ...rawJms, items: rawJms.items.map((item) => ({ ...item, severity: sustainedJmsSeverity(item, context) })) }
-  const issues = buildDashboardIssues(servers, jdbc, jms, applications, logs, context)
+  const pressure = evaluateServerPressure(servers, context)
+  const issues = buildDashboardIssues(servers, jdbc, jms, applications, logs, context, pressure.issues)
   context.tracker?.prune(context.now)
   const partialFailures = dashboardPartialFailures([
     { family: 'jdbc', result: jdbc },
@@ -839,6 +844,7 @@ export async function fetchDomainDashboardSnapshot(
     applicationRollup: buildApplicationRollup(applications.items),
     logs,
     issues,
+    serverAlerts: pressure.levels,
     partialFailures,
   }
 }
@@ -867,4 +873,21 @@ export function useDomainDashboard(options: { enabled?: boolean } = {}) {
   })
 
   return query
+}
+
+// The alert levels of the last dashboard poll (AppShell keeps it running), for heap bars outside
+// the dashboard. Reads the cache only; it never starts a request of its own.
+const NO_SERVER_ALERTS: Record<string, ServerAlertLevels> = {}
+
+export function useServerAlertLevels(): Record<string, ServerAlertLevels> {
+  const { creds } = useAuth()
+  const query = useQuery({
+    queryKey: domainDashboardQueryKey(creds),
+    queryFn: async () => {
+      if (!creds) throw new Error('not authenticated')
+      return fetchDomainDashboardSnapshot(creds, { tracker: liveAlertTrackerFor(creds) })
+    },
+    enabled: false,
+  })
+  return query.data?.serverAlerts ?? NO_SERVER_ALERTS
 }

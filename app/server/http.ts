@@ -42,7 +42,7 @@ import { invokeJmsJmxHelper, jmsJmxErrorResponse } from './jms-jmx.ts'
 import { CredentialGuard, credentialKey, defaultCredentialGuard } from './credential-guard.ts'
 import { TabPresence, parseTabPresenceMessage } from './tab-presence.ts'
 import { TAB_PRESENCE_PATH } from '../src/api/tab-presence-contract.ts'
-import { ALERT_RULES_PATH } from '../src/api/alert-rules.ts'
+import { ALERT_RULES_PATH, alertRulesConfigToFileShape, validateAlertRulesConfig } from '../src/api/alert-rules.ts'
 import { AlertRulesStore } from './alert-rules-store.ts'
 import {
   CREDENTIALS_REJECTED_CODE,
@@ -317,11 +317,38 @@ export async function handleAlertRulesRequest(req: IncomingMessage, res: ServerR
     sendJson(res, 404, { error: 'Alert rules endpoint not found.' })
     return
   }
-  if (req.method !== 'GET') {
-    sendJson(res, 405, { error: 'Alert rules are read-only; edit the file instead.' })
+  const store = options.alertRulesStore ?? sharedAlertRulesStore
+  if (req.method === 'GET') {
+    sendJson(res, 200, await store.read())
     return
   }
-  sendJson(res, 200, await (options.alertRulesStore ?? sharedAlertRulesStore).read())
+  if (req.method !== 'PUT') {
+    sendJson(res, 405, { error: 'Alert rules accept GET or PUT.' })
+    return
+  }
+  // PUT is never a simple request, so other web pages cannot send it without a CORS preflight,
+  // which this server does not answer.
+  if (options.readOnlyDemoMode === true) {
+    sendJson(res, 403, { error: 'Alert rules cannot be edited in read-only demo mode.' })
+    return
+  }
+  const body = await requestJson(req)
+  const revision = body && typeof body === 'object' ? (body as { revision?: unknown }).revision : undefined
+  if (typeof revision !== 'string') {
+    sendJson(res, 400, { error: 'The body must name the revision it edits.' })
+    return
+  }
+  const { config, errors } = validateAlertRulesConfig(alertRulesConfigToFileShape((body as { config?: unknown }).config))
+  if (errors.length > 0) {
+    sendJson(res, 400, { error: 'The alert rules are not valid.', errors })
+    return
+  }
+  const result = await store.write(revision, config)
+  if (!result.ok) {
+    sendJson(res, 409, { error: result.message, reason: result.reason, state: result.state })
+    return
+  }
+  sendJson(res, 200, result.state)
 }
 
 function resolveProxyTarget(req: IncomingMessage, defaultTarget?: string): NormalizedWlsTarget {

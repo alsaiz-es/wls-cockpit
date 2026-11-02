@@ -3,6 +3,7 @@ import { ArrowLeft, Clipboard, Download, FileText, Loader2, Pencil, Plus, RadioT
 import { useCallback, useMemo, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { type WlsCredentials } from '@/api/client'
+import { useServerAlertLevels } from '@/api/queries/domain-dashboard'
 import { readOnlyDemoModeEnabled } from '@/api/runtime-config'
 import { ServerDebugTab } from './server-debug-tab'
 import {
@@ -1326,6 +1327,7 @@ function LifecycleTasksSection({
 
 export function ServerDetails() {
   const { creds } = useAuth()
+  const serverAlerts = useServerAlertLevels()
   const queryClient = useQueryClient()
   const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -1865,7 +1867,7 @@ export function ServerDetails() {
                 <p className="text-muted-foreground text-[13px] leading-[18px]">Current usage from the latest runtime snapshot.</p>
               </div>
             </div>
-            <HeapBar heap={row.heap} variant="detail" series={heapSeries} />
+            <HeapBar heap={row.heap} variant="detail" series={heapSeries} alertLevel={serverAlerts[row.name]?.heap} />
           </section>
 
           <section className="border-border bg-surface-1 border px-3 py-3">

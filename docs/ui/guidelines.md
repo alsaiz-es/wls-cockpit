@@ -585,8 +585,13 @@ page). Never hardcode a threshold in a classifier or a tone helper.
 
 - The dashboard issue queue and the alert bell raise a signal only after it
   has held for the rule's duration. One busy reading is not an issue.
-- List pages, badges and bars colour the current reading with the same
-  thresholds, without the duration.
+- List pages and badges colour the current reading with the same thresholds,
+  without the duration. Signals whose single readings are normally noisy —
+  heap (it reaches 100 % before a collection) and the dashboard's pending,
+  hogging and stuck figures — only change colour while their alert is active.
+- Thresholds are edited on the Alert Rules page, one scope at a time (all
+  connections, or the current one), with the inherited value shown beside
+  each rule. The page writes `alerts.yaml`; it never writes WebLogic.
 - States WebLogic reports itself (failed, overloaded, paused, unhealthy
   deployments) are immediate and not configurable.
 - A counter that only grows (leaked connections) alerts on its increase, never
@@ -623,10 +628,10 @@ page). Never hardcode a threshold in a classifier or a tone helper.
 ### Heap / CPU bars
 
 - 80 px wide, 6 px tall, 3 px radius.
-- Filled portion uses status threshold colors from the `heap.percent` alert
-  rule (§9.5): green below its warning threshold, amber from warning, red from
-  critical (85 % and 95 % by default). Thin marks on the bar sit at those two
-  thresholds.
+- Filled portion is green; it turns amber or red only while the server's
+  `heap.percent` alert is active (§9.5), never from a single reading, since
+  heap normally climbs to 100 % before a collection. Thin marks on the bar sit
+  at the rule's thresholds (90 % by default).
 - Numeric label (e.g. `67%`) sits 4 px to the right of the bar in the same
   status color. Right-aligned in the cell so columns line up.
 

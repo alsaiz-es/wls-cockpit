@@ -1,7 +1,8 @@
 import type { DashboardSnapshot } from '@/api/queries/domain-dashboard'
+import type { ServerAlertLevels } from '@/api/queries/dashboard-alert-levels'
 import { MonoText, StatusBadge } from '@/components'
 import { cn } from '@/lib/utils'
-import { formatNumber, formatPercent, heapTone, severityTone } from './format'
+import { formatNumber, formatPercent, severityTone } from './format'
 import { CompactMetric } from './primitives'
 import type { DashboardVisualModel } from './visual-model'
 
@@ -71,12 +72,14 @@ function coverage(snapshot: DashboardSnapshot) {
   }
 }
 
-function pressureTone(value: number) {
-  return value > 0 ? ('negative' as const) : ('positive' as const)
-}
-
-function hoggingTone(value: number) {
-  return value > 0 ? ('warning' as const) : ('positive' as const)
+// Thread and heap figures take the worst sustained alert level across servers (alert-rules.ts),
+// not the current reading: a burst of pending requests or a heap peak before a collection stays
+// in the healthy colour.
+function signalTone(snapshot: DashboardSnapshot, signal: keyof ServerAlertLevels) {
+  const levels = Object.values(snapshot.serverAlerts ?? {}).map((server) => server[signal])
+  if (levels.includes('critical')) return 'negative' as const
+  if (levels.includes('warning')) return 'warning' as const
+  return 'positive' as const
 }
 
 export function ScanBand({
@@ -138,25 +141,25 @@ export function ScanBand({
           label="Heap"
           value={formatPercent(heapPercent)}
           detail={snapshot.runtimePressure.highestHeap?.serverName ?? 'unavailable'}
-          tone={heapTone(heapPercent)}
+          tone={heapPercent == null ? 'unknown' : signalTone(snapshot, 'heap')}
         />
         <CompactMetric
           label="Pending"
           value={formatNumber(snapshot.runtimePressure.pendingUserRequests)}
           detail="user requests"
-          tone={pressureTone(snapshot.runtimePressure.pendingUserRequests)}
+          tone={signalTone(snapshot, 'pending')}
         />
         <CompactMetric
           label="Hogging"
           value={formatNumber(snapshot.runtimePressure.hoggingThreads)}
           detail={`${formatNumber(snapshot.runtimePressure.queueLength)} queued`}
-          tone={hoggingTone(snapshot.runtimePressure.hoggingThreads)}
+          tone={signalTone(snapshot, 'hogging')}
         />
         <CompactMetric
           label="Stuck"
           value={formatNumber(snapshot.runtimePressure.stuckThreads)}
           detail={`${formatNumber(snapshot.runtimePressure.idleThreads)}/${formatNumber(snapshot.runtimePressure.totalThreads)} idle`}
-          tone={pressureTone(snapshot.runtimePressure.stuckThreads)}
+          tone={signalTone(snapshot, 'stuck')}
         />
         <CompactMetric label="JDBC" value={jdbc.value} detail={`${snapshot.jdbc.items.length} pools`} tone={jdbc.tone} />
         <CompactMetric label="JMS" value={jms.value} detail={jms.detail} tone={jms.tone} />

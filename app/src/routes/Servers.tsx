@@ -3,6 +3,7 @@ import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { Loader2, Plus, Search } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { type WlsCredentials } from '@/api/client'
+import { useServerAlertLevels } from '@/api/queries/domain-dashboard'
 import { readOnlyDemoModeEnabled } from '@/api/runtime-config'
 import {
   runServerLifecycleAction,
@@ -461,6 +462,7 @@ function CreateServerConfirmDialog({
 
 export function Servers() {
   const { creds } = useAuth()
+  const serverAlerts = useServerAlertLevels()
   const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
   const [selectedServerNames, setSelectedServerNames] = useState<Set<string>>(() => new Set())
@@ -863,7 +865,7 @@ export function Servers() {
               serverMetricResourceId(row.name),
               'heap.percent',
             )}
-            value={<HeapBar heap={row.heap} />}
+            value={<HeapBar heap={row.heap} alertLevel={serverAlerts[row.name]?.heap} />}
             title={`${row.name} heap`}
           />
         ),
@@ -945,6 +947,7 @@ export function Servers() {
       currentSelectedServerNames,
       history.scopeKey,
       returnState,
+      serverAlerts,
       toggleSelected,
       toggleVisibleSelection,
     ],

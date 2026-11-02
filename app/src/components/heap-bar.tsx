@@ -1,7 +1,9 @@
 import type { MetricHistorySeries } from '@/api/queries/metric-history'
+import type { AlertLevel } from '@/api/alert-rules'
 import {
   heapSegments,
   heapThresholdMarks,
+  heapToneForPercent,
   heapUtilizationLabel,
   type HeapTone,
   type HeapUsage,
@@ -17,6 +19,8 @@ export interface HeapBarProps {
   heap?: HeapUsage | null
   variant?: 'compact' | 'detail'
   series?: MetricHistorySeries
+  // The server's heap.percent alert level; without one the bar stays in the healthy colour.
+  alertLevel?: AlertLevel | null
   className?: string
 }
 
@@ -61,11 +65,11 @@ function formatBytes(value: number | null | undefined) {
   return `${scaled >= 10 || unit === 0 ? scaled.toFixed(0) : scaled.toFixed(1)} ${units[unit]}`
 }
 
-function HeapMeter({ heap, size }: { heap: HeapUsage; size: 'compact' | 'detail' }) {
+function HeapMeter({ heap, size, toneName }: { heap: HeapUsage; size: 'compact' | 'detail'; toneName: HeapTone }) {
   const segments = heapSegments(heap)
   if (!segments) return null
 
-  const tone = toneClasses[segments.tone]
+  const tone = toneClasses[toneName]
   const height = size === 'detail' ? 'h-3' : 'h-2'
 
   return (
@@ -133,14 +137,15 @@ export function HeapBar(props: HeapBarProps) {
   const segments = heapSegments(heap)
   if (!heap || !segments) return <Unavailable className={props.className} />
 
-  const tone = toneClasses[segments.tone]
+  const toneName = heapToneForPercent(segments.usedPercent, props.alertLevel ?? null)
+  const tone = toneClasses[toneName]
   const label = heapUtilizationLabel(heap)
 
   if (props.variant === 'detail') {
     return (
       <div className={cn('space-y-3', props.className)}>
         <div className="flex items-center gap-3">
-          <HeapMeter heap={heap} size="detail" />
+          <HeapMeter heap={heap} size="detail" toneName={toneName} />
           <MonoText className={cn('w-12 shrink-0 text-right text-[13px] leading-[18px]', tone.text)}>{label}</MonoText>
         </div>
         {props.series && props.series.samples.length >= 2 ? (
@@ -156,7 +161,7 @@ export function HeapBar(props: HeapBarProps) {
 
   return (
     <span className={cn('inline-flex items-center justify-end gap-1.5 tabular-nums', props.className)}>
-      <HeapMeter heap={heap} size="compact" />
+      <HeapMeter heap={heap} size="compact" toneName={toneName} />
       <MonoText className={cn('inline-block w-10 text-right text-xs leading-[14px]', tone.text)}>{label}</MonoText>
     </span>
   )
