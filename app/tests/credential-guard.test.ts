@@ -112,3 +112,31 @@ test('the browser hears about rejected credentials from any fetch', async () => 
   assert.equal(heard, 1)
   assert.equal(responseRejectsCredentials(new Response(null, { status: 401 })), false)
 })
+
+test('a password changed mid-session costs one failed login on the next poll cycle', async (t) => {
+  let upstreamCalls = 0
+  let acceptPassword = true
+  const upstream = createServer((req, res) => {
+    upstreamCalls += 1
+    setTimeout(() => {
+      res.statusCode = acceptPassword ? 200 : 401
+      res.end('{}')
+    }, 20)
+  })
+  t.after(() => upstream.close())
+  const upstreamUrl = await listen(upstream)
+  let now = 0
+  const cockpit = createCockpitServer({ targetUrl: upstreamUrl, defaultVersion: '14.1.2.0.0', credentialGuard: new CredentialGuard(() => now) })
+  t.after(() => cockpit.close())
+  const cockpitUrl = await listen(cockpit)
+  const headers = { Authorization: 'Basic d2VibG9naWM6b2s=', [WLS_TARGET_HEADER]: upstreamUrl }
+  const url = `${cockpitUrl}/api/wls/management/weblogic/14.1.2.0.0/domainRuntime`
+
+  assert.equal((await fetch(url, { headers })).status, 200)
+  upstreamCalls = 0
+  acceptPassword = false
+  now += 10_000
+  const burst = await Promise.all(Array.from({ length: 10 }, () => fetch(url, { headers })))
+  assert.equal(upstreamCalls, 1)
+  assert.ok(burst.every((response) => response.status === 401))
+})

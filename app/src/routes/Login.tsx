@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { clearSignInNotice, readSignInNotice } from '@/api/credential-rejection'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Check, Pencil, PlugZap, Plus, Trash2 } from 'lucide-react'
 import { useAuth } from '@/auth/useAuth'
+import { clearSignInNotice, readSignInNotice } from '@/api/credential-rejection'
 import {
   activeConnectionFromProfile,
   createConnectionProfile,

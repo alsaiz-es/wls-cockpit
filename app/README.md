@@ -66,6 +66,10 @@ WLS_COCKPIT_NODE_RUNTIME_DIR=/path/to/node-win-x64 npm run package:portable:wind
 
 The Windows artifact is written under `portable/wls-cockpit-windows-x64/`. Pass `--windows-launcher=<WLS Cockpit.exe>` (built with `node scripts/build-windows-launcher.mjs --out=...`, which needs mingw-w64) to include the double-click launcher: it starts Cockpit on `http://127.0.0.1:8888` without a console window, opens the browser, and reports a startup failure in a dialog; releases include it. `start-wls-cockpit.cmd` is always there and starts Cockpit without a default target at `http://127.0.0.1:8888` and opens that URL in the default browser; if Cockpit is already running there, it only opens the browser. The command window closes when Cockpit is stopped with Quit and stays open with the exit code if Cockpit fails.
 
+### Deploying By Upload
+
+The deploy form on the Deployments page can upload a `.war`, `.ear`, `.jar` or `.rar` (up to 2 GiB) from the workstation. The browser posts the raw archive to the local server (`POST /api/deployments/upload?version=<wls-rest-version>`, with the deployment name and targets in the `X-WLS-Cockpit-Deployment-Model` header and the file name in `X-WLS-Cockpit-File-Name`; the custom headers also make browsers send a CORS preflight, so other web pages cannot post there). The server streams it to WebLogic as the multipart `POST /management/weblogic/<version>/edit/appDeployments` without holding the archive in memory, inside an edit session that it activates. The upload is recorded in the action audit and refused in read-only demo mode. WebLogic keeps the uploaded file under the AdminServer's upload directory; targets on another host that use the `nostage` staging mode may not be able to read it from there.
+
 ### Optional JMS Message Browsing
 
 JMS message browse/detail/delete/produce operations use WebLogic's standard JMX/T3 client when configured. On WebLogic 12.2.1.4 the same client also reads the JNDI tree (`POST /api/jndi/bindings`, read-only), because that release has no JNDI resource in its REST API. Provide WebLogic client jars from the same WebLogic version as the target domain:

@@ -110,8 +110,12 @@ function configResult(
   }
 }
 
-async function editRequest(label: string, request: (signal: AbortSignal) => Promise<{ error?: unknown; response: Response }>) {
-  const res = await withWlsRestTimeout(label, request, DEPLOYMENT_CONFIG_TIMEOUT_MS)
+async function editRequest(
+  label: string,
+  request: (signal: AbortSignal) => Promise<{ error?: unknown; response: Response }>,
+  timeoutMs = DEPLOYMENT_CONFIG_TIMEOUT_MS,
+) {
+  const res = await withWlsRestTimeout(label, request, timeoutMs)
   if (res.error) throw createWlsHttpError(label, res.response, res.error)
 }
 
@@ -128,16 +132,19 @@ async function startEdit(creds: WlsCredentials) {
   )
 }
 
-async function activateEdit(creds: WlsCredentials) {
-  await editRequest('Activate edit session', (signal) =>
-    clientFor(creds).POST('/management/weblogic/{version}/edit/changeManager/activate', {
-      signal,
-      params: {
-        path: { version: creds.version },
-        header: { 'X-Requested-By': 'wls-cockpit' },
-      },
-      body: {},
-    }),
+async function activateEdit(creds: WlsCredentials, timeoutMs = DEPLOYMENT_CONFIG_TIMEOUT_MS) {
+  await editRequest(
+    'Activate edit session',
+    (signal) =>
+      clientFor(creds).POST('/management/weblogic/{version}/edit/changeManager/activate', {
+        signal,
+        params: {
+          path: { version: creds.version },
+          header: { 'X-Requested-By': 'wls-cockpit' },
+        },
+        body: {},
+      }),
+    timeoutMs,
   )
 }
 
@@ -154,11 +161,17 @@ async function cancelEdit(creds: WlsCredentials) {
   )
 }
 
-async function withEditSession<T>(creds: WlsCredentials, mutation: () => Promise<T>): Promise<T> {
+// activateTimeoutMs: activating a new deployment stages and starts it on every target, which can
+// take much longer than a configuration change.
+async function withEditSession<T>(
+  creds: WlsCredentials,
+  mutation: () => Promise<T>,
+  activateTimeoutMs = DEPLOYMENT_CONFIG_TIMEOUT_MS,
+): Promise<T> {
   return runInEditSession(
     {
       startEdit: () => startEdit(creds),
-      activate: () => activateEdit(creds),
+      activate: () => activateEdit(creds, activateTimeoutMs),
       cancelEdit: () => cancelEdit(creds),
     },
     mutation,
@@ -247,10 +260,14 @@ export async function deployApplication(
     if (!input.file) throw new Error('Choose the archive to upload.')
     if (input.targets.length === 0) throw new Error('At least one target is required.')
     const file = input.file
-    return withEditSession(creds, async () => {
-      await uploadApplication(creds, deploymentName, input.targets, file)
-      return configResult('deploy', deploymentName, input.targets)
-    })
+    return withEditSession(
+      creds,
+      async () => {
+        await uploadApplication(creds, deploymentName, input.targets, file)
+        return configResult('deploy', deploymentName, input.targets)
+      },
+      DEPLOYMENT_UPLOAD_TIMEOUT_MS,
+    )
   }
 
   const deploymentName = input.name.trim()

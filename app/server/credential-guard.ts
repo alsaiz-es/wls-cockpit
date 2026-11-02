@@ -5,9 +5,12 @@ import { createHash } from 'node:crypto'
 // - after a 401, requests are refused locally until a sign-in request succeeds;
 // - when the last success is older than FRESH_MS (the password may have changed since), one
 //   request goes through as a probe and the rest wait for its answer.
-export const CREDENTIAL_FRESH_MS = 30_000
-// A probe that gets no answer within this time stops holding the other requests back.
-export const CREDENTIAL_PROBE_WAIT_MS = 20_000
+// FRESH_MS stays well under the shortest polling interval (10 s), so every poll cycle starts with
+// one probe; requests chained within a cycle pass straight through.
+export const CREDENTIAL_FRESH_MS = 2_000
+// A slow probe (a log search, a thread dump) holds the others back at most this long; giving up
+// costs at most one more failed login.
+export const CREDENTIAL_PROBE_WAIT_MS = 10_000
 const MAX_ENTRIES = 200
 
 type Entry = {
