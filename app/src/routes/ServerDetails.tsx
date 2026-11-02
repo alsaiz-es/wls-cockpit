@@ -41,7 +41,8 @@ import {
   topologyReferenceList,
   createTopologyChildStep,
   deleteTopologyChildStep,
-  deleteTopologyResourceStep,
+  deleteServerSteps,
+  fetchMigratableTargetNames,
   updateTopologyChildStep,
   updateTopologyResourceStep,
   useTopologyConfigurationSnapshot,
@@ -1393,18 +1394,18 @@ export function ServerDetails() {
   const configEditMutation = useMutation<ConfigEditResult, Error, ConfigEditIntent>({
     mutationFn: async (intent) => {
       if (!creds) throw new Error('not authenticated')
-      const step = intent.kind === 'create-child'
-        ? createTopologyChildStep(creds, intent.endpointId, intent.serverName, intent.childName ?? '', intent.payload)
+      const steps = intent.kind === 'create-child'
+        ? [createTopologyChildStep(creds, intent.endpointId, intent.serverName, intent.childName ?? '', intent.payload)]
         : intent.kind === 'delete-child'
-          ? deleteTopologyChildStep(creds, intent.endpointId, intent.serverName, intent.childName ?? '')
+          ? [deleteTopologyChildStep(creds, intent.endpointId, intent.serverName, intent.childName ?? '')]
           : intent.kind === 'delete-server'
-            ? deleteTopologyResourceStep(creds, 'server', intent.serverName)
+            ? deleteServerSteps(creds, intent.serverName, await fetchMigratableTargetNames(creds))
             : intent.kind === 'update-child'
-              ? updateTopologyChildStep(creds, intent.endpointId, intent.serverName, intent.payload, intent.childName ?? '')
+              ? [updateTopologyChildStep(creds, intent.endpointId, intent.serverName, intent.payload, intent.childName ?? '')]
               : intent.endpointKind === 'root'
-                ? updateTopologyResourceStep(creds, 'server', intent.serverName, intent.payload)
-                : updateTopologyChildStep(creds, intent.endpointId, intent.serverName, intent.payload)
-      await runTopologyEditTransaction(creds, intent.detail, [step])
+                ? [updateTopologyResourceStep(creds, 'server', intent.serverName, intent.payload)]
+                : [updateTopologyChildStep(creds, intent.endpointId, intent.serverName, intent.payload)]
+      await runTopologyEditTransaction(creds, intent.detail, steps)
       return { detail: `${intent.detail} accepted.` }
     },
     onMutate: () => {
@@ -1725,7 +1726,7 @@ export function ServerDetails() {
         }
         description={
           configEditIntent?.kind === 'delete-server'
-            ? 'This will stage and activate a WebLogic edit-tree delete for the managed server.'
+            ? 'This will stage and activate a WebLogic edit-tree delete for the managed server and the migratable target WebLogic created for it in its cluster, if any.'
             : configEditIntent?.kind === 'delete-child'
             ? 'This will stage and activate a WebLogic edit-tree delete for the selected child resource.'
             : 'This will stage and activate WebLogic edit-tree changes for the selected server section.'

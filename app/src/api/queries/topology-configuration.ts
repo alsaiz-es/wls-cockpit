@@ -660,6 +660,42 @@ export function deleteTopologyResourceStep(
   }
 }
 
+// WebLogic creates a migratable target named "<server> (migratable)" when a server joins a cluster,
+// and refuses to delete the server while that target still names it as its preferred server
+// ("MigratableTargetMBean … does not have a preferred server set"). Deleting a server therefore
+// deletes that automatic target in the same edit session. Targets an operator created are left
+// alone: if one still points at the server, WebLogic's own validation error says so.
+export function automaticMigratableTargetName(serverName: string) {
+  return `${serverName.trim()} (migratable)`
+}
+
+export function deleteServerSteps(
+  creds: WlsCredentials,
+  serverName: string,
+  migratableTargetNames: readonly string[],
+): TopologyMutationStep[] {
+  const automatic = automaticMigratableTargetName(serverName)
+  const steps: TopologyMutationStep[] = []
+  if (migratableTargetNames.includes(automatic)) {
+    steps.push({
+      operation: `Delete migratable target ${automatic}`,
+      method: 'DELETE',
+      path: topologyManagementPath(creds.version, `/edit/migratableTargets/${encodeURIComponent(automatic)}`),
+    })
+  }
+  steps.push(deleteTopologyResourceStep(creds, 'server', serverName))
+  return steps
+}
+
+export async function fetchMigratableTargetNames(creds: WlsCredentials) {
+  const data = await fetchWlsJson(
+    creds,
+    'Migratable target list',
+    topologyManagementPath(creds.version, '/edit/migratableTargets', { fields: 'name', links: 'none' }),
+  )
+  return normalizeNamedRows(data).map((row) => String(row.name))
+}
+
 export function updateTopologyChildStep(
   creds: WlsCredentials,
   endpointId: string,

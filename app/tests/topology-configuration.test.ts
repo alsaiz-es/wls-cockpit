@@ -21,6 +21,8 @@ import {
   topologyReferenceList,
   updateTopologyChildStep,
   updateTopologyResourceStep,
+  automaticMigratableTargetName,
+  deleteServerSteps,
 } from '../src/api/queries/topology-configuration.ts'
 import {
   topologyEndpointById,
@@ -256,4 +258,18 @@ test('topology transaction cancels edit session on mutation failure', async () =
   } finally {
     globalThis.fetch = originalFetch
   }
+})
+
+test('deleting a clustered server also deletes the migratable target WebLogic created for it', () => {
+  assert.equal(automaticMigratableTargetName('server1'), 'server1 (migratable)')
+  const steps = deleteServerSteps(creds14, 'server1', ['server1 (migratable)', 'jmsTarget'])
+  assert.deepEqual(steps.map((step) => [step.method, step.path]), [
+    ['DELETE', '/management/weblogic/14.1.2.0.0/edit/migratableTargets/server1%20(migratable)'],
+    ['DELETE', '/management/weblogic/14.1.2.0.0/edit/servers/server1'],
+  ])
+})
+
+test('a server outside a cluster, or a migratable target an operator created, is left to WebLogic', () => {
+  const steps = deleteServerSteps(creds12, 'standalone', ['jmsTarget', 'server1 (migratable)'])
+  assert.deepEqual(steps.map((step) => step.path), ['/management/weblogic/12.2.1.4.0/edit/servers/standalone'])
 })
