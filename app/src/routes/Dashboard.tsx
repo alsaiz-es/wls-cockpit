@@ -127,7 +127,13 @@ export function Dashboard() {
 
   return (
     <>
-      <PageHeader title="Dashboard" subtitle="Domain health overview." />
+      <PageHeader
+        title="Dashboard"
+        subtitle="Domain health overview."
+        updatedAt={snapshot ? (fixture ? 1700000000000 : query.dataUpdatedAt) : undefined}
+        refreshing={isFetching}
+        onRefresh={fixture ? undefined : () => void query.refetch()}
+      />
       <DiagnosticSnapshotExport snapshot={snapshot} request={snapshotRequest} showTrigger={false} />
 
       {query.isError && !snapshot ? (
@@ -148,13 +154,7 @@ export function Dashboard() {
         <LoadingBlock />
       ) : snapshot && visual ? (
         <div className={cn('space-y-4', isFetching && 'opacity-70')}>
-          <ScanBand
-            snapshot={snapshot}
-            visual={visual}
-            isFetching={isFetching}
-            updatedAt={fixture ? 1700000000000 : query.dataUpdatedAt}
-            onRefresh={() => void query.refetch()}
-          />
+          <ScanBand snapshot={snapshot} visual={visual} />
 
           {visual.emphasize.issueQueue ? (
             <Section title="Issue Queue" detail="Read-only diagnostic targets for the next operator action.">

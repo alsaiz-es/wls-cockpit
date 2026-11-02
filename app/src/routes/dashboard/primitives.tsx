@@ -37,7 +37,6 @@ export function Stat({ label, value, tone }: { label: string; value: ReactNode; 
       <div
         className={cn(
           'mt-1 truncate font-mono text-[18px] font-semibold leading-6 tabular-nums',
-          tone === 'positive' && 'text-status-positive',
           tone === 'warning' && 'text-status-warning',
           tone === 'negative' && 'text-status-negative',
           tone === 'neutral' && 'text-status-neutral',
@@ -62,14 +61,13 @@ export function CompactMetric({
   tone?: StatusTone
 }) {
   return (
-    <div className="min-w-[116px] border-l border-border pl-3 first:border-l-0 first:pl-0">
+    <div className="min-w-[116px] border-l border-border pl-3">
       <div className="text-muted-foreground truncate text-[11px] uppercase leading-[14px] tracking-[0.04em]">
         {label}
       </div>
       <div
         className={cn(
           'mt-0.5 truncate font-mono text-[16px] font-semibold leading-5 tabular-nums',
-          tone === 'positive' && 'text-status-positive',
           tone === 'warning' && 'text-status-warning',
           tone === 'negative' && 'text-status-negative',
           tone === 'neutral' && 'text-status-neutral',
@@ -139,7 +137,6 @@ export function CompactStatusLine({
       <MonoText
         className={cn(
           'shrink-0 text-xs uppercase tracking-[0.05em]',
-          tone === 'positive' && 'text-status-positive',
           tone === 'warning' && 'text-status-warning',
           tone === 'negative' && 'text-status-negative',
           tone === 'neutral' && 'text-status-neutral',

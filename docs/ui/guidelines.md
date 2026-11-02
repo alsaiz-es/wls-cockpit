@@ -248,7 +248,10 @@ One accent color, used sparingly:
 ### Status palette (operational meaning)
 
 Every status color encodes a real operational state. Do not use these
-colors for decoration. Pair colors with text (and ideally an icon) — never
+colors for decoration. Numbers and labels that report a healthy value stay
+in the foreground color; green is for the dot of a status badge, not for a
+KPI that happens to be fine. A degraded or critical summary panel gets a
+3 px left strip in the status color, not a tinted background. Pair colors with text (and ideally an icon) — never
 rely on color alone.
 
 | Status meaning             | Color                       | Tailwind-ish          |

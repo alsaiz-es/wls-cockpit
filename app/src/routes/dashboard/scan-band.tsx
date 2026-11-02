@@ -1,7 +1,5 @@
-import { Loader2, RefreshCw } from 'lucide-react'
 import type { DashboardSnapshot } from '@/api/queries/domain-dashboard'
-import { MonoText, RelativeTime, StatusBadge } from '@/components'
-import { Button } from '@/components/ui/button'
+import { MonoText, StatusBadge } from '@/components'
 import { cn } from '@/lib/utils'
 import { formatNumber, formatPercent, heapTone, severityTone } from './format'
 import { CompactMetric } from './primitives'
@@ -93,15 +91,9 @@ function hoggingTone(value: number) {
 
 export function ScanBand({
   snapshot,
-  isFetching,
-  updatedAt,
-  onRefresh,
   visual,
 }: {
   snapshot: DashboardSnapshot
-  isFetching: boolean
-  updatedAt: number
-  onRefresh: () => void
   visual: DashboardVisualModel
 }) {
   const logs = logAvailability(snapshot)
@@ -110,32 +102,25 @@ export function ScanBand({
   const apps = appHealth(snapshot)
   const coverageMetric = coverage(snapshot)
   const heapPercent = snapshot.runtimePressure.highestHeap?.percent
+  const issueCount = snapshot.issues.length
 
   return (
+    // The band stays neutral; a strip in the color of the worst state marks a degraded or critical
+    // domain without tinting every number in it.
     <section
       className={cn(
         'rounded-lg border border-border bg-surface-1 p-4',
-        visual.layoutMode === 'critical' && 'border-status-negative/50 bg-status-negative/8',
-        visual.layoutMode === 'degraded' && 'border-status-warning/50 bg-status-warning/8',
-        isFetching && 'opacity-70',
+        visual.layoutMode === 'critical' && 'border-l-[3px] border-l-status-negative',
+        visual.layoutMode === 'degraded' && 'border-l-[3px] border-l-status-warning',
       )}
     >
-      <div className="mb-4 grid gap-3 lg:grid-cols-[minmax(220px,0.45fr)_minmax(0,1fr)_auto]">
+      <div className="mb-4 grid gap-3 lg:grid-cols-[minmax(220px,0.45fr)_minmax(0,1fr)]">
         <div className="min-w-0">
           <StatusBadge kind="custom" tone={severityTone(snapshot.severity)} label={snapshot.severity} />
           <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted-foreground">
             <span>
-              <MonoText>{snapshot.issues.length.toLocaleString()}</MonoText> issues
+              <MonoText>{issueCount.toLocaleString()}</MonoText> {issueCount === 1 ? 'issue' : 'issues'}
             </span>
-            <span>
-              Updated <RelativeTime value={updatedAt} />
-            </span>
-            {isFetching ? (
-              <span className="inline-flex items-center gap-1">
-                <Loader2 className="size-3 animate-spin" strokeWidth={1.5} />
-                Loading...
-              </span>
-            ) : null}
           </div>
         </div>
         <div className="min-w-0 border-l border-border pl-3">
@@ -154,13 +139,9 @@ export function ScanBand({
             {visual.affected.detail}
           </div>
         </div>
-        <Button type="button" variant="ghost" size="sm" onClick={onRefresh}>
-          <RefreshCw className="size-3.5" strokeWidth={1.5} />
-          Refresh
-        </Button>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-[repeat(11,minmax(0,1fr))]">
+      <div className="grid gap-y-3 sm:grid-cols-2 lg:grid-cols-6 2xl:grid-cols-[repeat(11,minmax(0,1fr))]">
         <CompactMetric label="Servers" value={snapshot.serverRollup.total} />
         <CompactMetric label="Running" value={snapshot.serverRollup.running} tone="positive" />
         <CompactMetric

@@ -81,10 +81,11 @@ export function IssueQueue({
                     {hint}
                   </span>
                 </td>
-                <td className="px-3">
+                <td className="max-w-[300px] px-3">
                   <Link
                     to={target.href}
-                    className="inline-flex h-7 items-center rounded-md px-2 text-[13px] text-foreground hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    title={target.label}
+                    className="block h-7 truncate rounded-md px-2 text-[13px] leading-7 text-foreground hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     {target.label}
                   </Link>
