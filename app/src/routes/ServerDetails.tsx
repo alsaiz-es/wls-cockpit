@@ -57,7 +57,7 @@ import {
 import { useAuth } from '@/auth/useAuth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { ConfirmDialog, HeapBar, MonoText, PageHeader, RelativeTime, StatusBadge } from '@/components'
+import { ConfirmDialog, HeapBar, MonoText, PageHeader, RelativeTime, RestartRequiredBadge, StatusBadge } from '@/components'
 import { detailReturnPath } from './detail-return-state'
 import type { ServerMetricCaptureFixtureName } from './server-metrics-fixtures'
 import { ServerMetricsTab } from './server-metrics-tab'
@@ -1833,8 +1833,9 @@ export function ServerDetails() {
           <div className="grid gap-3 md:grid-cols-4">
             <div className="border-border bg-surface-1 min-h-[72px] border px-3 py-2">
               <div className="text-muted-foreground text-[11px] uppercase leading-[14px] tracking-[0.04em]">Lifecycle</div>
-              <div className="mt-2">
+              <div className="mt-2 flex flex-wrap items-center gap-2">
                 <StatusBadge kind="wls-state" value={row.state} />
+                {row.restartRequired ? <RestartRequiredBadge /> : null}
               </div>
             </div>
             <div className="border-border bg-surface-1 min-h-[72px] border px-3 py-2">

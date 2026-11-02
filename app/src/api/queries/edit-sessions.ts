@@ -194,6 +194,10 @@ export async function invalidateEditSessionAffectedQueries(
     queryClient.invalidateQueries({ queryKey: ['deploymentDataSourceNames', cacheKey] }),
     queryClient.invalidateQueries({ queryKey: ['deploymentJmsModules', cacheKey] }),
     queryClient.invalidateQueries({ queryKey: ['deploymentTargets', cacheKey] }),
+    // An activation can leave servers waiting for a restart (ServerRuntime.restartRequired).
+    queryClient.invalidateQueries({ queryKey: ['serverRuntimes', cacheKey] }),
+    queryClient.invalidateQueries({ queryKey: ['serverRuntimeDetail', cacheKey] }),
+    queryClient.invalidateQueries({ queryKey: ['domainDashboard', cacheKey] }),
   ])
 }
 

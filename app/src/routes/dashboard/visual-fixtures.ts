@@ -11,6 +11,7 @@ const baseSnapshot: DashboardSnapshot = {
       healthState: 'ok',
       listenAddress: 'localhost',
       listenPort: 7001,
+      restartRequired: false,
       heap: { current: 384 * 1024 * 1024, committed: 640 * 1024 * 1024, max: 1024 * 1024 * 1024 },
       jvm: {
         uptime: 3_600_000,
@@ -37,6 +38,7 @@ const baseSnapshot: DashboardSnapshot = {
       healthState: 'unknown',
       listenAddress: null,
       listenPort: null,
+      restartRequired: null,
       heap: null,
       jvm: null,
       threads: null,

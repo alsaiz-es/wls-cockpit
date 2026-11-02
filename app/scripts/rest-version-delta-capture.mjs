@@ -14,7 +14,7 @@ const OUTPUT = process.env.WLS_DELTA_OUTPUT
   : resolve(APP_ROOT, 'test-results/rest-delta', `rest-version-delta-${process.env.WLS_DELTA_VERSION ?? 'target'}.sanitized.json`)
 
 const SERVER_LIFECYCLE_FIELDS = 'name,state'
-const SERVER_RUNTIME_BASE_FIELDS = 'name,state,healthState,listenAddress,listenPort,defaultURL'
+const SERVER_RUNTIME_BASE_FIELDS = 'name,state,healthState,listenAddress,listenPort,defaultURL,restartRequired'
 const JVM_RUNTIME_FIELDS =
   'heapFreeCurrent,heapSizeCurrent,heapSizeMax,uptime,javaVersion,javaVendor,javaVMVendor,OSName,OSVersion'
 const THREAD_POOL_FIELDS =

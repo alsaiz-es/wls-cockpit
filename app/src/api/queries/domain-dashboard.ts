@@ -14,7 +14,7 @@ import {
 } from './dashboard-jdbc-normalization.ts'
 import { hasJmsPauseSignal, shouldFetchJmsDestinations } from './dashboard-jms-gating.ts'
 import { classifyDashboardJms } from './dashboard-jms-classification.ts'
-import { buildObservedServerDownIssues } from './dashboard-observed-servers.ts'
+import { buildObservedServerDownIssues, buildRestartRequiredIssues } from './dashboard-observed-servers.ts'
 import {
   collectDashboardFamilyFanout,
   dashboardFanoutErrorMessage,
@@ -677,6 +677,7 @@ export function buildDashboardIssues(
   const issues: DashboardIssue[] = []
 
   issues.push(...buildObservedServerDownIssues(servers, observedRunningServers))
+  issues.push(...buildRestartRequiredIssues(servers))
 
   servers.forEach((server) => {
     const lifecycleSeverity = severityFromTone(lifecycleTone(server.state))

@@ -32,6 +32,7 @@ import {
   MonoText,
   PageHeader,
   RelativeTime,
+  RestartRequiredBadge,
   StatusBadge,
   type DataTableColumn,
   type DataTableSort,
@@ -836,7 +837,12 @@ export function Servers() {
         id: 'state',
         header: 'STATE',
         sortable: true,
-        cell: (row) => <StatusBadge kind="wls-state" value={row.state} />,
+        cell: (row) => (
+          <div className="flex min-w-0 items-center gap-2">
+            <StatusBadge kind="wls-state" value={row.state} />
+            {row.restartRequired ? <RestartRequiredBadge /> : null}
+          </div>
+        ),
       },
       {
         id: 'health',

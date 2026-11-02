@@ -27,5 +27,5 @@ export {
   lifecycleTone,
 } from './status-model'
 export type { StatusTone, WlsHealthState, WlsLifecycleState } from './status-model'
-export { StatusBadge } from './status-badge'
+export { RestartRequiredBadge, StatusBadge } from './status-badge'
 export type { StatusBadgeProps } from './status-badge'

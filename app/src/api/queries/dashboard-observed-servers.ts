@@ -45,3 +45,33 @@ export function buildObservedServerDownIssues(
 
   return issues
 }
+
+export interface DashboardRestartRequiredIssue {
+  id: string
+  severity: 'warning'
+  family: 'servers'
+  title: string
+  detail: string
+  hint: string
+  serverName: string
+  snapshotServers: string[]
+}
+
+// One issue per server whose runtime reports restartRequired: activated configuration changes
+// that WebLogic only applies at the next start.
+export function buildRestartRequiredIssues(
+  servers: Array<{ name: string; restartRequired: boolean | null }>,
+): DashboardRestartRequiredIssue[] {
+  return servers
+    .filter((server) => server.restartRequired === true)
+    .map((server) => ({
+      id: `server-restart-required:${server.name}`,
+      severity: 'warning' as const,
+      family: 'servers' as const,
+      title: `${server.name} needs a restart`,
+      detail: 'Activated configuration changes take effect only after this server restarts.',
+      hint: 'Shut the server down and start it again from Servers when the change window allows.',
+      serverName: server.name,
+      snapshotServers: [server.name],
+    }))
+}

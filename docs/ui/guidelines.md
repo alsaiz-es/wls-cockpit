@@ -629,6 +629,8 @@ do not all exist yet — they appear when their first feature needs them.
   one-and-only table component (§7.1).
 - `<StatusBadge state>` — dot + label (§7.2). Accepts WLS lifecycle and
   health states directly.
+- `<RestartRequiredBadge>` — warning badge next to a server's lifecycle state
+  when its runtime reports `restartRequired` after an activation.
 - `<Drawer open onOpenChange title>` — right-side drawer (§7.5).
 - `<ConfirmDialog>` — destructive-action modal (§7.6).
 - `<RowActions primary more>` — primary row action plus a `…` dropdown

@@ -70,3 +70,7 @@ test('per-server thread pool polling only requests thread counters', () => {
   assert.match(params.fields, /\bqueueLength\b/)
   assert.equal(params.links, 'none')
 })
+
+test('server runtime base polling asks whether the server needs a restart', () => {
+  assert.match(serverRuntimeBaseQueryParams().fields, /\brestartRequired\b/)
+})

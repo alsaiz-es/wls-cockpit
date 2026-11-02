@@ -59,3 +59,12 @@ export function StatusBadge(props: StatusBadgeProps) {
     </span>
   )
 }
+
+// Marks a server whose activated configuration changes wait for its next restart.
+export function RestartRequiredBadge({ className }: { className?: string }) {
+  return (
+    <span title="Activated configuration changes take effect after this server restarts.">
+      <StatusBadge kind="custom" tone="warning" label="Restart required" className={className} />
+    </span>
+  )
+}

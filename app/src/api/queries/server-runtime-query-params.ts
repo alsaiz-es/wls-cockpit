@@ -1,6 +1,6 @@
 export const SERVER_LIFECYCLE_FIELDS = 'name,state'
 export const SERVER_RUNTIME_BASE_FIELDS =
-  'name,state,healthState,listenAddress,listenPort,defaultURL'
+  'name,state,healthState,listenAddress,listenPort,defaultURL,restartRequired'
 export const JVM_RUNTIME_FIELDS =
   'heapFreeCurrent,heapSizeCurrent,heapSizeMax,uptime,javaVersion,javaVendor,javaVMVendor,OSName,OSVersion,processCpuLoad'
 export const THREAD_POOL_FIELDS =

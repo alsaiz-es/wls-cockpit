@@ -33,7 +33,7 @@ import { normalizeHeapUsage, type HeapUsage } from './heap-utilization.ts'
  *   /serverLifeCycleRuntimes?fields=name,state&links=none
  * It then fans out bounded per-server base runtime reads for runtime-capable
  * states instead of using the federated /serverRuntimes collection:
- *   /serverRuntimes/{serverName}?fields=name,state,healthState,listenAddress,listenPort,defaultURL&links=none
+ *   /serverRuntimes/{serverName}?fields=name,state,healthState,listenAddress,listenPort,defaultURL,restartRequired&links=none
  * It then reads JVM and thread-pool metrics with allow-listed N + 1 requests:
  *   /serverRuntimes/{serverName}/JVMRuntime?fields=heapFreeCurrent,heapSizeCurrent,heapSizeMax,uptime,...&links=none
  *   /serverRuntimes/{serverName}/threadPoolRuntime?fields=executeThreadTotalCount,...,stuckThreadCount&links=none
@@ -53,6 +53,9 @@ export interface ServerRuntimeRow {
   healthState: WlsHealthState
   listenAddress: string | null
   listenPort: number | null
+  // true when activated configuration changes only apply after this server restarts; null when
+  // the server has no runtime MBean to ask.
+  restartRequired: boolean | null
   heap: HeapUsage | null
   jvm: {
     uptime: number | null
@@ -210,6 +213,7 @@ function normalizeServer(value: unknown): BaseServerRuntimeRow | null {
     healthState: normalizeHealth(health?.state),
     listenAddress: readString(value.listenAddress) ?? defaultListen.address,
     listenPort: readNumber(value.listenPort) ?? defaultListen.port,
+    restartRequired: typeof value.restartRequired === 'boolean' ? value.restartRequired : null,
     heap: null,
     jvm: null,
     threads: null,
@@ -232,6 +236,7 @@ function synthesizeServerRow(name: string, state: WlsLifecycleState): BaseServer
     healthState: 'unknown',
     listenAddress: null,
     listenPort: null,
+    restartRequired: null,
     heap: null,
     jvm: null,
     threads: null,
@@ -367,6 +372,7 @@ export async function fetchServerRuntimeRows(creds: WlsCredentials): Promise<Ser
       healthState: row.healthState,
       listenAddress: row.listenAddress,
       listenPort: row.listenPort,
+      restartRequired: row.restartRequired,
       heap: row.heap ?? detail?.heap ?? null,
       jvm: row.jvm ?? detail?.jvm ?? null,
       threads: row.threads ?? detail?.threads ?? null,
@@ -390,6 +396,7 @@ export async function fetchServerRuntimeDetail(
     healthState: row.healthState,
     listenAddress: row.listenAddress,
     listenPort: row.listenPort,
+    restartRequired: row.restartRequired,
     heap: row.heap ?? detail?.heap ?? null,
     jvm: row.jvm ?? detail?.jvm ?? null,
     threads: row.threads ?? detail?.threads ?? null,
@@ -476,6 +483,7 @@ export function useServerRuntimes() {
         healthState: row.healthState,
         listenAddress: row.listenAddress,
         listenPort: row.listenPort,
+        restartRequired: row.restartRequired,
         heap: row.heap,
         jvm: row.jvm,
         threads: row.threads,

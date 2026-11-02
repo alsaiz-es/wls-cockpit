@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { classifyDashboardJms } from '../src/api/queries/dashboard-jms-classification.ts'
-import { buildObservedServerDownIssues } from '../src/api/queries/dashboard-observed-servers.ts'
+import { buildObservedServerDownIssues, buildRestartRequiredIssues } from '../src/api/queries/dashboard-observed-servers.ts'
 import { dashboardServerJmsPressure } from '../src/api/queries/dashboard-server-pressure.ts'
 import { issueHint, issueSecondaryTarget, issueSnapshotServers, issueTarget } from '../src/routes/dashboard/format.ts'
 
@@ -98,5 +98,18 @@ test('session-observed running server later stopped becomes critical', () => {
       serverName: 'AdminServer',
       snapshotServers: ['AdminServer'],
     },
+  )
+})
+
+test('dashboard raises a warning for each server waiting for a restart', () => {
+  const issues = buildRestartRequiredIssues([
+    { name: 'AdminServer', restartRequired: false },
+    { name: 'server1', restartRequired: true },
+    { name: 'server2', restartRequired: null },
+  ])
+
+  assert.deepEqual(
+    issues.map((issue) => [issue.id, issue.severity, issue.family, issue.serverName]),
+    [['server-restart-required:server1', 'warning', 'servers', 'server1']],
   )
 })
