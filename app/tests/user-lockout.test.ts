@@ -37,10 +37,15 @@ test('locked users are the highest per-server count, since cluster members share
 })
 
 test('clearing a lockout posts the user name to every server and reports each result', async (t) => {
-  const calls: Array<{ url: string; body: unknown; requestedBy: string | null }> = []
+  const calls: Array<{ url: string; body: unknown; requestedBy: string | null; target: string | null }> = []
   t.mock.method(globalThis, 'fetch', async (url: string, init: RequestInit) => {
     const headers = new Headers(init.headers)
-    calls.push({ url, body: JSON.parse(String(init.body)), requestedBy: headers.get('X-Requested-By') })
+    calls.push({
+      url,
+      body: JSON.parse(String(init.body)),
+      requestedBy: headers.get('X-Requested-By'),
+      target: headers.get('X-WLS-Cockpit-Target'),
+    })
     if (url.includes('/ms1/')) return new Response(JSON.stringify({ detail: 'not found' }), { status: 404 })
     return new Response(null, { status: 204 })
   })
@@ -49,6 +54,7 @@ test('clearing a lockout posts the user name to every server and reports each re
 
   assert.deepEqual(calls.map((call) => call.body), [{ userName: 'integration' }, { userName: 'integration' }])
   assert.ok(calls.every((call) => call.url.endsWith('/userLockoutManagerRuntime/clearLockout') && call.requestedBy === 'wls-cockpit'))
+  assert.ok(calls.every((call) => call.target === 'http://127.0.0.1:7001'))
   assert.deepEqual(results.map((result) => [result.serverName, result.ok]), [['AdminServer', true], ['ms1', false]])
   await assert.rejects(() => clearUserLockout(creds, '   ', ['AdminServer']), /user name/)
 })

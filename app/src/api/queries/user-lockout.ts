@@ -94,10 +94,12 @@ function unavailableRow(serverName: string, lifecycleState: WlsLifecycleState, e
   return { ...normalizeUserLockoutRow(serverName, lifecycleState, null), error }
 }
 
+// The audit headers also carry the domain target the proxy forwards to.
 function requestHeaders(creds: WlsCredentials) {
   return {
     Accept: 'application/json',
     Authorization: wlsBasicAuthHeader(creds),
+    ...actionAuditHeaders(creds),
   }
 }
 
@@ -171,7 +173,6 @@ export async function clearUserLockout(
                 ...requestHeaders(creds),
                 'Content-Type': 'application/json',
                 'X-Requested-By': 'wls-cockpit',
-                ...actionAuditHeaders(creds),
               },
               body: JSON.stringify({ userName: name }),
             }),
