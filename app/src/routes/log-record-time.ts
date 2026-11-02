@@ -37,7 +37,7 @@ interface TimedRecord {
 // date WebLogic sent.
 export function logRecordTime(record: TimedRecord) {
   if (record.timestamp === null) {
-    const raw = record.date ?? '-'
+    const raw = record.date ?? '–'
     return { text: raw, title: raw }
   }
   return { text: logClockTime(record.timestamp), title: logFullTimestamp(record.timestamp) }

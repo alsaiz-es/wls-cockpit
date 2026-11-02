@@ -22,31 +22,31 @@ function severityTone(severity: DataSourceSeverity): StatusTone {
 }
 
 function formatNumber(value: number | null) {
-  return value === null ? '-' : value.toLocaleString()
+  return value === null ? '–' : value.toLocaleString()
 }
 
 function formatDeploymentState(value: string | number | null) {
-  if (value === null) return '-'
+  if (value === null) return '–'
   if (value === 2) return 'ACTIVE'
   if (value === 0) return 'UNPREPARED'
   return String(value)
 }
 
 function formatPercent(value: number | null) {
-  return value === null ? '-' : `${Math.round(value * 100)}%`
+  return value === null ? '–' : `${Math.round(value * 100)}%`
 }
 
 function formatBoolean(value: boolean | null) {
-  if (value === null) return '-'
+  if (value === null) return '–'
   return value ? 'true' : 'false'
 }
 
 function targetSummary(row: DataSourceRuntimeRow) {
-  return row.configuredTargets.length ? row.configuredTargets.map(deploymentTargetLabel).join(', ') : '-'
+  return row.configuredTargets.length ? row.configuredTargets.map(deploymentTargetLabel).join(', ') : '–'
 }
 
 function listSummary(values: string[]) {
-  return values.length ? values.join(', ') : '-'
+  return values.length ? values.join(', ') : '–'
 }
 
 function Metric({
@@ -119,7 +119,7 @@ function UtilizationPanel({ row }: { row: DataSourceRuntimeRow }) {
           <span className="text-foreground">Free max </span>
           <MonoText>
             {row.activeConnectionsCurrentCount === null || row.utilizationCapacity === null
-              ? '-'
+              ? '–'
               : Math.max(0, row.utilizationCapacity - row.activeConnectionsCurrentCount).toLocaleString()}
           </MonoText>
         </div>
@@ -205,7 +205,7 @@ export function DataSourceDetails() {
           <div className="min-w-0">
             <div className="font-medium">Datasource not found</div>
             <MonoText className="text-muted-foreground mt-1 block truncate">
-              {serverName || '-'} / {dataSourceName || '-'}
+              {serverName || '–'} / {dataSourceName || '–'}
             </MonoText>
           </div>
           <Button type="button" variant="outline" size="sm" asChild>
@@ -278,11 +278,11 @@ export function DataSourceDetails() {
               columns={2}
               items={[
                 { label: 'Enabled', value: formatBoolean(row.runtimeEnabled) },
-                { label: 'DB product', value: row.databaseProductName ?? '-' },
-                { label: 'DB version', value: row.databaseProductVersion ?? '-', mono: true },
-                { label: 'Runtime driver', value: row.runtimeDriverName ?? '-' },
-                { label: 'Driver version', value: row.runtimeDriverVersion ?? '-', mono: true },
-                { label: 'JDBC driver version', value: row.jdbcDriverVersion ?? '-', mono: true },
+                { label: 'DB product', value: row.databaseProductName ?? '–' },
+                { label: 'DB version', value: row.databaseProductVersion ?? '–', mono: true },
+                { label: 'Runtime driver', value: row.runtimeDriverName ?? '–' },
+                { label: 'Driver version', value: row.runtimeDriverVersion ?? '–', mono: true },
+                { label: 'JDBC driver version', value: row.jdbcDriverVersion ?? '–', mono: true },
               ]}
             />
           </section>
@@ -313,24 +313,24 @@ export function DataSourceDetails() {
                 <h2 className="text-[14px] font-medium leading-5">Configuration</h2>
                 <p className="text-muted-foreground text-[13px] leading-[18px]">JDBC system resource metadata from the edit tree.</p>
               </div>
-              <MonoText className="text-muted-foreground text-[13px]">{row.systemResourceName ?? '-'}</MonoText>
+              <MonoText className="text-muted-foreground text-[13px]">{row.systemResourceName ?? '–'}</MonoText>
             </div>
             <KeyValueGrid
               columns={3}
               items={[
                 { label: 'Configured targets', value: targetSummary(row), mono: true },
                 { label: 'JNDI', value: listSummary(row.jndiNames), mono: true },
-                { label: 'Driver', value: row.driverName ?? '-', mono: true },
-                { label: 'DB user', value: demoSensitiveValue(row.databaseUser, readOnlyDemoMode) ?? '-', mono: true },
-                { label: 'JDBC URL', value: demoSensitiveValue(row.url, readOnlyDemoMode) ?? '-', mono: true },
+                { label: 'Driver', value: row.driverName ?? '–', mono: true },
+                { label: 'DB user', value: demoSensitiveValue(row.databaseUser, readOnlyDemoMode) ?? '–', mono: true },
+                { label: 'JDBC URL', value: demoSensitiveValue(row.url, readOnlyDemoMode) ?? '–', mono: true },
                 { label: 'Initial', value: formatNumber(row.configuredInitialCapacity), mono: true },
                 { label: 'Min', value: formatNumber(row.configuredMinCapacity), mono: true },
                 { label: 'Max', value: formatNumber(row.configuredMaxCapacity), mono: true },
-                { label: 'Test table', value: row.testTableName ?? '-', mono: true },
-                { label: 'Global TX', value: row.globalTransactionsProtocol ?? '-' },
-                { label: 'Algorithm', value: row.algorithmType ?? '-' },
-                { label: 'Scope', value: row.scope ?? '-' },
-                { label: 'Datasource list', value: demoSensitiveValue(row.dataSourceList, readOnlyDemoMode) ?? '-', mono: true },
+                { label: 'Test table', value: row.testTableName ?? '–', mono: true },
+                { label: 'Global TX', value: row.globalTransactionsProtocol ?? '–' },
+                { label: 'Algorithm', value: row.algorithmType ?? '–' },
+                { label: 'Scope', value: row.scope ?? '–' },
+                { label: 'Datasource list', value: demoSensitiveValue(row.dataSourceList, readOnlyDemoMode) ?? '–', mono: true },
                 { label: 'Keep after global TX', value: formatBoolean(row.keepConnAfterGlobalTx) },
               ]}
             />

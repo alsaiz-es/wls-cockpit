@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Archive, Download, GitCompare, Loader2, Plus } from 'lucide-react'
+import { Download, Loader2, Plus } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import {
   captureDomainConfigSnapshot,
@@ -14,6 +14,7 @@ import { useAuth } from '@/auth/useAuth'
 import { DataTable, PageHeader, RelativeTime, StatusBadge } from '@/components'
 import type { DataTableColumn } from '@/components/data-table'
 import { Button } from '@/components/ui/button'
+import { FILTER_SELECT_CLASS } from '@/components/filter-option-label'
 import { MonoText } from '@/components/mono-text'
 
 function downloadSnapshot(snapshot: DomainConfigSnapshot) {
@@ -188,11 +189,8 @@ export function DomainConfigSnapshots() {
         <div className="border-status-warning/60 bg-status-warning/8 mb-4 border px-3 py-2 text-[13px]">{storageWarning}</div>
       ) : null}
 
-      <section className="mb-5 border border-border bg-background px-4 py-3">
-        <div className="mb-3 flex items-center gap-2">
-          <Archive className="size-4 text-accent" strokeWidth={1.5} />
-          <h2 className="text-[15px] font-medium leading-5">Stored snapshots</h2>
-        </div>
+      <section className="mb-6">
+        <h2 className="mb-2 text-[14px] font-medium leading-5">Stored snapshots</h2>
         <DataTable
           columns={snapshotColumns}
           rows={snapshots}
@@ -205,17 +203,14 @@ export function DomainConfigSnapshots() {
         />
       </section>
 
-      <section className="border border-border bg-background px-4 py-3">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <GitCompare className="size-4 text-accent" strokeWidth={1.5} />
-            <h2 className="text-[15px] font-medium leading-5">Diff</h2>
-          </div>
+      <section>
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-[14px] font-medium leading-5">Diff</h2>
           <div className="flex flex-wrap items-center gap-2 text-[13px]">
             <select
               value={before?.manifest.id ?? ''}
               onChange={(event) => setBeforeId(event.target.value)}
-              className="border-border bg-surface-1 h-8 max-w-[260px] border px-2"
+              className={`${FILTER_SELECT_CLASS} max-w-[260px]`}
             >
               <option value="">Before</option>
               {snapshots.map((snapshot) => (
@@ -227,7 +222,7 @@ export function DomainConfigSnapshots() {
             <select
               value={after?.manifest.id ?? ''}
               onChange={(event) => setAfterId(event.target.value)}
-              className="border-border bg-surface-1 h-8 max-w-[260px] border px-2"
+              className={`${FILTER_SELECT_CLASS} max-w-[260px]`}
             >
               <option value="">After</option>
               {snapshots.map((snapshot) => (

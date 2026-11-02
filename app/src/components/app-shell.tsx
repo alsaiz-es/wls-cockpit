@@ -225,6 +225,7 @@ function EnvironmentIndicator() {
       kind="custom"
       tone={status.tone}
       label={`${status.host}:${status.port} · v${status.version}`}
+      preserveCase
       className="max-w-[320px]"
     />
   )

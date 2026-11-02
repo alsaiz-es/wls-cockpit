@@ -41,7 +41,7 @@ function severityTone(severity: DeploymentSeverity): StatusTone {
 }
 
 function formatActiveVersionState(value: number | null) {
-  if (value === null) return '-'
+  if (value === null) return '–'
   if (value === 2) return 'ACTIVE'
   if (value === 1) return 'ACTIVE_ADMIN'
   if (value === 0) return 'INACTIVE'
@@ -49,7 +49,7 @@ function formatActiveVersionState(value: number | null) {
 }
 
 function formatDeploymentState(value: string | number | null) {
-  if (value === null) return '-'
+  if (value === null) return '–'
   if (value === 2) return 'ACTIVE'
   if (value === 1) return 'PREPARED'
   if (value === 0) return 'UNPREPARED'
@@ -57,36 +57,36 @@ function formatDeploymentState(value: string | number | null) {
 }
 
 function targetSummary(targets: DeploymentTargetRef[]) {
-  return targets.length ? targets.map(deploymentTargetLabel).join(', ') : '-'
+  return targets.length ? targets.map(deploymentTargetLabel).join(', ') : '–'
 }
 
 function formatDeploymentOrder(value: number | null) {
-  return value === null ? '-' : value.toLocaleString()
+  return value === null ? '–' : value.toLocaleString()
 }
 
 function formatNumber(value: number | null) {
-  return value === null ? '-' : value.toLocaleString()
+  return value === null ? '–' : value.toLocaleString()
 }
 
 function formatRate(value: number | null) {
-  if (value === null) return '-'
+  if (value === null) return '–'
   return `${value.toLocaleString(undefined, { maximumFractionDigits: value >= 10 ? 1 : 2 })}/s`
 }
 
 function formatMs(value: number | null) {
-  if (value === null) return '-'
+  if (value === null) return '–'
   return `${value.toLocaleString(undefined, { maximumFractionDigits: value >= 10 ? 1 : 2 })} ms`
 }
 
 function formatBoolean(value: boolean | null) {
-  if (value === null) return '-'
+  if (value === null) return '–'
   return value ? 'TRUE' : 'FALSE'
 }
 
 function formatValue(value: string | number | boolean | null) {
   if (typeof value === 'boolean') return formatBoolean(value)
   if (typeof value === 'number') return value.toLocaleString()
-  return value ?? '-'
+  return value ?? '–'
 }
 
 function symptomTone(symptom: DeploymentHealthSymptom): StatusTone {
@@ -140,11 +140,11 @@ function HealthSymptomsPanel({ symptoms }: { symptoms: DeploymentHealthSymptom[]
                   )}
                 </td>
                 <td className="px-3 py-2">
-                  <MonoText>{symptom.type ?? '-'}</MonoText>
+                  <MonoText>{symptom.type ?? '–'}</MonoText>
                 </td>
                 <td className="max-w-[280px] px-3 py-2">
                   <MonoText className="block truncate" title={symptom.instanceId ?? undefined}>
-                    {symptom.instanceId ?? '-'}
+                    {symptom.instanceId ?? '–'}
                   </MonoText>
                 </td>
                 <td className="max-w-[320px] px-3 py-2 text-[13px] leading-[18px]">
@@ -156,7 +156,7 @@ function HealthSymptomsPanel({ symptoms }: { symptoms: DeploymentHealthSymptom[]
                   </div>
                 </td>
                 <td className="px-3 py-2 text-[13px] leading-[18px]">
-                  {symptom.info ?? '-'}
+                  {symptom.info ?? '–'}
                 </td>
               </tr>
             ))}
@@ -168,7 +168,7 @@ function HealthSymptomsPanel({ symptoms }: { symptoms: DeploymentHealthSymptom[]
 }
 
 function ConfigValue({ label, value }: { label: string; value: string | number | null }) {
-  const text = value === null || value === '' ? '-' : String(value)
+  const text = value === null || value === '' ? '–' : String(value)
   return (
     <div className="min-w-0">
       <div className="text-muted-foreground text-[11px] uppercase leading-[14px] tracking-[0.04em]">{label}</div>
@@ -436,24 +436,24 @@ function WebModulesSection({
                       <MonoText className="block truncate text-[13px]" title={module.componentName ?? module.name}>
                         {module.componentName ?? module.name}
                       </MonoText>
-                      <MonoText className="text-muted-foreground mt-1 block truncate text-[12px]" title={module.moduleUri ?? module.moduleId ?? '-'}>
-                        {module.moduleUri ?? module.moduleId ?? '-'}
+                      <MonoText className="text-muted-foreground mt-1 block truncate text-[12px]" title={module.moduleUri ?? module.moduleId ?? '–'}>
+                        {module.moduleUri ?? module.moduleId ?? '–'}
                       </MonoText>
                     </td>
                     <td className="max-w-[220px] px-2 py-2 align-top">
-                      <MonoText className="block truncate text-[13px]" title={module.contextRoot ?? '-'}>
-                        {module.contextRoot ?? '-'}
+                      <MonoText className="block truncate text-[13px]" title={module.contextRoot ?? '–'}>
+                        {module.contextRoot ?? '–'}
                       </MonoText>
-                      <MonoText className="text-muted-foreground mt-1 block truncate text-[12px]" title={module.configuredContextRoot ?? '-'}>
-                        configured {module.configuredContextRoot ?? '-'}
+                      <MonoText className="text-muted-foreground mt-1 block truncate text-[12px]" title={module.configuredContextRoot ?? '–'}>
+                        configured {module.configuredContextRoot ?? '–'}
                       </MonoText>
                     </td>
                     <td className="px-2 py-2 align-top">
                       <MonoText className="block truncate text-[13px]" title={formatDeploymentState(module.deploymentState)}>
                         {formatDeploymentState(module.deploymentState)}
                       </MonoText>
-                      <MonoText className="text-muted-foreground mt-1 block truncate text-[12px]" title={module.status ?? '-'}>
-                        {module.status ?? '-'}
+                      <MonoText className="text-muted-foreground mt-1 block truncate text-[12px]" title={module.status ?? '–'}>
+                        {module.status ?? '–'}
                       </MonoText>
                     </td>
                     <td className="px-2 py-2 text-right align-top">
@@ -513,7 +513,7 @@ function servletLabel(servlet: DeploymentRequestServletMetric) {
 
 function servletPatternSummary(servlet: DeploymentRequestServletMetric) {
   if (servlet.urlPatterns.length) return servlet.urlPatterns.join(', ')
-  return servlet.url ?? servlet.servletPath ?? servlet.contextPath ?? '-'
+  return servlet.url ?? servlet.servletPath ?? servlet.contextPath ?? '–'
 }
 
 function RequestMetricsServletTable({
@@ -704,7 +704,7 @@ function RequestMetricsSection({
                       {module.componentName ?? module.name}
                     </MonoText>
                     <div className="text-muted-foreground mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[12px] leading-4">
-                      <MonoText title={module.contextRoot ?? '-'}>{module.contextRoot ?? '-'}</MonoText>
+                      <MonoText title={module.contextRoot ?? '–'}>{module.contextRoot ?? '–'}</MonoText>
                       <span>servlets {module.servlets.length.toLocaleString()}</span>
                       {module.status ? <span>{module.status}</span> : null}
                     </div>
@@ -814,7 +814,7 @@ export function DeploymentDetails() {
           <div className="min-w-0">
             <div className="font-medium">Deployment not found</div>
             <MonoText className="text-muted-foreground mt-1 block truncate">
-              {serverName || '-'} / {deploymentName || '-'}
+              {serverName || '–'} / {deploymentName || '–'}
             </MonoText>
           </div>
           <Button type="button" variant="outline" size="sm" asChild>

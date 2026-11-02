@@ -2343,12 +2343,15 @@ async function runJmsUrlStateSmoke(session, creds) {
     `&jmsServer=${encodeURIComponent(destination.jmsServerName)}` +
     '&sort=destination&dir=desc'
   const detailPath = `/jms/${encodeURIComponent(destination.serverName)}/${encodeURIComponent(destination.jmsServerName)}/${encodeURIComponent(destination.destinationName)}`
+  // WebLogic names module destinations "Module!Queue"; the table shows the queue with its module
+  // on a second line.
+  const shownName = destination.destinationName.split('!').pop()
   await navigate(session, path, creds)
   await assertRouteState(session, 'jms-url-state-return', path)
   await waitForExpectedText(
     session,
     'jms-url-state-return',
-    ['JMS', 'Read-only JMS servers', destination.destinationName, destination.serverName, destination.jmsServerName],
+    ['JMS', 'Read-only JMS servers', shownName, destination.serverName, destination.jmsServerName],
     ['Coming soon', 'Request failed'],
   )
   await clickRouteLink(session, 'jms-url-state-return', detailPath)
@@ -2356,7 +2359,7 @@ async function runJmsUrlStateSmoke(session, creds) {
   await waitForExpectedText(
     session,
     'jms-url-state-return-detail',
-    [destination.destinationName, 'Single JMS destination runtime snapshot.', 'MESSAGES', 'PENDING', 'CONSUMERS'],
+    [shownName, 'Single JMS destination runtime snapshot.', 'MESSAGES', 'PENDING', 'CONSUMERS'],
     ['Coming soon', 'Request failed', 'JMS destination not found'],
   )
   await clickRouteLink(session, 'jms-url-state-return-back', path)
@@ -2364,7 +2367,7 @@ async function runJmsUrlStateSmoke(session, creds) {
   const text = await waitForExpectedText(
     session,
     'jms-url-state-return-returned',
-    ['JMS', destination.destinationName, destination.serverName, destination.jmsServerName],
+    ['JMS', shownName, destination.serverName, destination.jmsServerName],
     ['Coming soon', 'Request failed'],
   )
   const screenshotPath = await screenshot(session, 'jms-url-state-return')

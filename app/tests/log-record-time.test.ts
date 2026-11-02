@@ -16,7 +16,7 @@ test('a record without a parsed timestamp keeps the raw WebLogic date', () => {
     text: 'Nov 2, 2026 9:05:07 AM',
     title: 'Nov 2, 2026 9:05:07 AM',
   })
-  assert.equal(logRecordTime({ timestamp: null }).text, '-')
+  assert.equal(logRecordTime({ timestamp: null }).text, '–')
   assert.equal(logRecordTime({ timestamp: morning }).text, '09:05:07.042')
 })
 

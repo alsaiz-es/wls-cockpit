@@ -47,7 +47,7 @@ function archiveKindTone(kind: LogArchiveRuntime['kind']): StatusTone {
 }
 
 function formatNumber(value: number | null) {
-  return value === null ? '-' : value.toLocaleString()
+  return value === null ? '–' : value.toLocaleString()
 }
 
 function streamModel(value: boolean | null): { tone: StatusTone; label: string } {
@@ -57,20 +57,20 @@ function streamModel(value: boolean | null): { tone: StatusTone; label: string }
 }
 
 function formatTimestamp(value: number | null) {
-  if (value === null) return '-'
+  if (value === null) return '–'
   return new Date(value).toLocaleString()
 }
 
 function formatDuration(value: number | null) {
-  return value === null ? '-' : `${value.toLocaleString()} ms`
+  return value === null ? '–' : `${value.toLocaleString()} ms`
 }
 
 function formatAccessDuration(value: number | null) {
-  return value === null ? '-' : value.toLocaleString()
+  return value === null ? '–' : value.toLocaleString()
 }
 
 function formatBytes(value: number | null) {
-  return value === null ? '-' : value.toLocaleString()
+  return value === null ? '–' : value.toLocaleString()
 }
 
 
@@ -447,14 +447,14 @@ function LogRecordTailPanel({
                         <MonoText title={logRecordTime(record).title}>{logRecordTime(record).text}</MonoText>
                       </td>
                       <td className="max-w-[90px] px-2 pt-2 text-[13px]">
-                        <MonoText title={access?.method ?? '-'}>{access?.method ?? '-'}</MonoText>
+                        <MonoText title={access?.method ?? '–'}>{access?.method ?? '–'}</MonoText>
                       </td>
                       <td className="px-2 pt-2 text-[13px]">
                         <StatusBadge kind="custom" tone={httpStatusTone(access?.status ?? null)} label={access?.status?.toString() ?? 'RAW'} />
                       </td>
                       <td className={cn('px-2 py-2 text-[13px] leading-[18px]', maximized ? 'min-w-[460px]' : 'min-w-[320px]')}>
-                        <MonoText className="whitespace-pre-wrap break-words" title={access?.path ?? record.message ?? '-'}>
-                          {access?.path ?? record.message ?? '-'}
+                        <MonoText className="whitespace-pre-wrap break-words" title={access?.path ?? record.message ?? '–'}>
+                          {access?.path ?? record.message ?? '–'}
                         </MonoText>
                         {access?.protocol || access?.referer ? (
                           <span className="text-muted-foreground mt-1 block truncate text-[12px]" title={[access.protocol, access.referer].filter(Boolean).join(' · ')}>
@@ -463,14 +463,14 @@ function LogRecordTailPanel({
                         ) : null}
                       </td>
                       <td className="max-w-[180px] truncate px-2 pt-2 text-[13px]">
-                        <MonoText title={access?.client ?? '-'}>{access?.client ?? '-'}</MonoText>
+                        <MonoText title={access?.client ?? '–'}>{access?.client ?? '–'}</MonoText>
                       </td>
                       <td className="px-2 pt-2 text-right font-mono text-[13px]">{formatBytes(access?.bytes ?? null)}</td>
                       <td className="px-2 pt-2 text-right font-mono text-[13px]">{formatAccessDuration(access?.durationMs ?? null)}</td>
                       <td className={cn('px-2 py-2 text-[13px] leading-[18px]', maximized ? 'min-w-[420px]' : 'min-w-[300px]')}>
                         <div className="flex items-start justify-between gap-2">
-                          <MonoText className="whitespace-pre-wrap break-words" title={access?.userAgent ?? record.message ?? '-'}>
-                            {access?.userAgent ?? access?.raw ?? record.message ?? '-'}
+                          <MonoText className="whitespace-pre-wrap break-words" title={access?.userAgent ?? record.message ?? '–'}>
+                            {access?.userAgent ?? access?.raw ?? record.message ?? '–'}
                           </MonoText>
                           {record.message ? (
                             <Button type="button" variant="ghost" size="sm" onClick={() => copyRecordMessage(record)}>
@@ -519,16 +519,16 @@ function LogRecordTailPanel({
                       <StatusBadge kind="custom" tone={logRecordSeverityTone(record.severity)} label={record.severity ?? 'UNKNOWN'} />
                     </td>
                     <td className="max-w-[150px] truncate px-2 pt-2 text-[13px]">
-                      <MonoText title={record.subsystem ?? '-'}>{record.subsystem ?? '-'}</MonoText>
+                      <MonoText title={record.subsystem ?? '–'}>{record.subsystem ?? '–'}</MonoText>
                     </td>
                     <td className="max-w-[130px] truncate px-2 pt-2 text-[13px]">
-                      <MonoText title={record.messageId ?? '-'}>{record.messageId ?? '-'}</MonoText>
+                      <MonoText title={record.messageId ?? '–'}>{record.messageId ?? '–'}</MonoText>
                     </td>
                     <td className="max-w-[200px] truncate whitespace-nowrap px-2 pt-2 text-[13px]">
-                      <MonoText title={record.thread ?? '-'}>{record.thread ?? '-'}</MonoText>
+                      <MonoText title={record.thread ?? '–'}>{record.thread ?? '–'}</MonoText>
                     </td>
                     <td className="max-w-[140px] truncate px-2 pt-2 text-[13px]">
-                      <MonoText title={record.userId ?? '-'}>{record.userId ?? '-'}</MonoText>
+                      <MonoText title={record.userId ?? '–'}>{record.userId ?? '–'}</MonoText>
                     </td>
                     <td className={cn('w-full max-w-0 px-2 py-1.5 text-[13px] leading-[18px]', maximized ? 'min-w-[560px]' : 'min-w-[320px]')}>
                       <div className="flex items-start justify-between gap-2">
@@ -539,11 +539,11 @@ function LogRecordTailPanel({
                             'min-w-0 cursor-pointer pt-0.5 text-left hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                             expandedRecords.has(recordKey(record, index)) ? 'whitespace-pre-wrap break-words' : 'truncate',
                           )}
-                          title={expandedRecords.has(recordKey(record, index)) ? 'Collapse message' : record.message ?? '-'}
+                          title={expandedRecords.has(recordKey(record, index)) ? 'Collapse message' : record.message ?? '–'}
                           aria-expanded={expandedRecords.has(recordKey(record, index))}
                           onClick={() => toggleRecord(recordKey(record, index))}
                         >
-                          {record.message ?? '-'}
+                          {record.message ?? '–'}
                         </MonoText>
                         {record.message ? (
                           <Button
@@ -732,7 +732,7 @@ function DataAccessDetailList({
                     <StatusBadge kind="custom" tone={archiveKindTone(runtime.kind)} label={runtime.label} />
                   </td>
                   <td className="max-w-[220px] truncate px-2 text-[13px]">
-                    <MonoText title={runtime.type ?? '-'}>{runtime.type ?? '-'}</MonoText>
+                    <MonoText title={runtime.type ?? '–'}>{runtime.type ?? '–'}</MonoText>
                   </td>
                   <td className="px-2 text-right font-mono text-[13px]">{formatNumber(runtime.latestRecordId)}</td>
                   <td className="px-2 text-[13px]">
@@ -805,7 +805,7 @@ function ArchiveRuntimeList({
                     <MonoText title={runtime.name}>{runtime.name}</MonoText>
                   </td>
                   <td className="max-w-[210px] truncate px-2 text-[13px]">
-                    <MonoText title={runtime.type ?? '-'}>{runtime.type ?? '-'}</MonoText>
+                    <MonoText title={runtime.type ?? '–'}>{runtime.type ?? '–'}</MonoText>
                   </td>
                   <td className="px-2 text-right font-mono text-[13px]">{formatNumber(runtime.recordCount)}</td>
                   <td className="px-2 text-right font-mono text-[13px]">{formatNumber(runtime.retrievedRecordCount)}</td>
@@ -944,7 +944,7 @@ export function LogDetails() {
         <div className="border-border bg-surface-1 flex min-h-28 items-center justify-between gap-3 border px-3 py-3 text-[13px]">
           <div className="min-w-0">
             <div className="font-medium">Log runtime not found</div>
-            <MonoText className="text-muted-foreground mt-1 block truncate">{serverName || '-'}</MonoText>
+            <MonoText className="text-muted-foreground mt-1 block truncate">{serverName || '–'}</MonoText>
           </div>
           <Button type="button" variant="outline" size="sm" asChild>
             <Link to={returnPath}>Back to logs</Link>

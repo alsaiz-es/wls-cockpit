@@ -418,8 +418,8 @@ export function Jms() {
               >
                 <MonoText className="block max-w-full truncate font-medium">{entry.jmsServerName}</MonoText>
                 <span className="text-muted-foreground text-[12px]">
-                  {entry.serverName} · {entry.destinations} destinations · {entry.messages.toLocaleString()} messages ·{' '}
-                  {entry.consumers.toLocaleString()} consumers
+                  {entry.serverName} · {entry.destinations} {entry.destinations === 1 ? 'destination' : 'destinations'} · {entry.messages.toLocaleString()} {entry.messages === 1 ? 'message' : 'messages'} ·{' '}
+                  {entry.consumers.toLocaleString()} {entry.consumers === 1 ? 'consumer' : 'consumers'}
                   {entry.stalled ? <span className="text-status-warning"> · {entry.stalled} stalled</span> : null}
                 </span>
               </button>

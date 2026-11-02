@@ -19,6 +19,7 @@ import {
   type StatusTone,
 } from '@/components'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { FILTER_SELECT_CLASS, filterOptionLabel } from '@/components/filter-option-label'
 import { detailReturnState } from './detail-return-state'
@@ -157,15 +158,24 @@ function PartialBanner({
     ? `${failureText} · +${hiddenFailureCount.toLocaleString()} more partial failures`
     : failureText
   return (
-    <div className="border-status-warning/60 bg-status-warning/8 mb-3 flex min-h-10 items-center justify-between gap-3 border px-3 py-2 text-[13px]">
+    // Showing some Work Managers without nested detail is a size cap, not a failure: it reads as a
+    // note. Only partial failures get the warning style and Retry.
+    <div
+      className={cn(
+        'mb-3 flex min-h-10 items-center justify-between gap-3 border px-3 py-2 text-[13px]',
+        failures.length > 0 ? 'border-status-warning/60 bg-status-warning/8' : 'border-border text-muted-foreground',
+      )}
+    >
       <span className="min-w-0 truncate">
         {overflowCount > 0 ? `+${overflowCount.toLocaleString()} Work Managers shown without nested detail.` : null}
         {overflowCount > 0 && cappedFailureText ? ' · ' : null}
         {cappedFailureText ? `Partial data: ${cappedFailureText}` : null}
       </span>
-      <Button type="button" variant="ghost" size="sm" onClick={onRetry}>
-        Retry
-      </Button>
+      {failures.length > 0 ? (
+        <Button type="button" variant="ghost" size="sm" onClick={onRetry}>
+          Retry
+        </Button>
+      ) : null}
     </div>
   )
 }

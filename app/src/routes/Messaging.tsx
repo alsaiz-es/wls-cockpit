@@ -25,7 +25,7 @@ function severityTone(severity: MessagingSeverity): StatusTone {
 }
 
 function count(value: number | null) {
-  return value === null ? '-' : value.toLocaleString()
+  return value === null ? '–' : value.toLocaleString()
 }
 
 function SectionTitle({ title, detail }: { title: string; detail: string }) {

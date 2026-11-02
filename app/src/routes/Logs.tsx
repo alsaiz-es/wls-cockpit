@@ -125,7 +125,7 @@ function formatNumber(value: number | null) {
 }
 
 function formatBytes(value: number | null) {
-  return value === null ? '-' : value.toLocaleString()
+  return value === null ? '–' : value.toLocaleString()
 }
 
 function availabilityTone(available: boolean): StatusTone {
@@ -545,24 +545,24 @@ function MultiServerLogTail({
                     <td className="max-w-[180px] px-2 py-2 text-[13px]">
                       {isHttpAccessRecord ? (
                         <>
-                          <MonoText className="block truncate" title={access?.method ?? '-'}>
-                            {access?.method ?? '-'}
+                          <MonoText className="block truncate" title={access?.method ?? '–'}>
+                            {access?.method ?? '–'}
                           </MonoText>
-                          <span className="text-muted-foreground block truncate text-[12px]" title={access?.client ?? '-'}>
-                            {access?.client ?? '-'}
+                          <span className="text-muted-foreground block truncate text-[12px]" title={access?.client ?? '–'}>
+                            {access?.client ?? '–'}
                           </span>
                         </>
                       ) : (
-                        <MonoText className="block truncate" title={record.subsystem ?? '-'}>
-                          {record.subsystem ?? '-'}
+                        <MonoText className="block truncate" title={record.subsystem ?? '–'}>
+                          {record.subsystem ?? '–'}
                         </MonoText>
                       )}
                     </td>
                     <td className="min-w-[360px] px-2 py-2 text-[13px] leading-[18px]">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 flex-1">
-                          <MonoText className="whitespace-pre-wrap break-words" title={access?.path ?? record.message ?? '-'}>
-                            {access?.path ?? record.message ?? '-'}
+                          <MonoText className="whitespace-pre-wrap break-words" title={access?.path ?? record.message ?? '–'}>
+                            {access?.path ?? record.message ?? '–'}
                           </MonoText>
                           {access ? (
                             <span

@@ -119,7 +119,7 @@ export function DataTable<T>({
                       active ? (sort.direction === 'asc' ? 'ascending' : 'descending') : undefined
                     }
                     className={cn(
-                      'text-muted-foreground px-3 text-[13px] font-medium uppercase leading-[18px] tracking-[0.04em]',
+                      'text-muted-foreground whitespace-nowrap px-3 text-[13px] font-medium uppercase leading-[18px] tracking-[0.04em]',
                       alignClass(column.align),
                       column.sticky === 'right' && STICKY_RIGHT_CLASS,
                       column.headerClassName,

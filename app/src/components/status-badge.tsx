@@ -15,7 +15,7 @@ export type { StatusTone, WlsHealthState, WlsLifecycleState } from './status-mod
 export type StatusBadgeProps =
   | { kind: 'wls-state'; value: WlsLifecycleState; className?: string }
   | { kind: 'wls-health'; value: WlsHealthState; className?: string }
-  | { kind: 'custom'; tone: StatusTone; label: string; className?: string }
+  | { kind: 'custom'; tone: StatusTone; label: string; className?: string; preserveCase?: boolean }
 
 const toneClasses: Record<StatusTone, string> = {
   positive: 'text-status-positive',
@@ -56,7 +56,11 @@ export function StatusBadge(props: StatusBadgeProps) {
       {/* A healthy state keeps its green dot and a quiet label, so warnings and failures are what
           stand out in a long table (guidelines §7.2). */}
       <MonoText
-        className={cn('min-w-0 truncate uppercase tracking-[0.05em]', tone === 'positive' && 'text-muted-foreground')}
+        className={cn(
+          'min-w-0 truncate tracking-[0.05em]',
+          !(props.kind === 'custom' && props.preserveCase) && 'uppercase',
+          tone === 'positive' && 'text-muted-foreground',
+        )}
         title={label}
       >
         {label}
