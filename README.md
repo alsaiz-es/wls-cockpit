@@ -36,11 +36,31 @@ running domain:
 
 ## Screenshots
 
-<!-- TODO screenshot: dashboard -->
-<!-- TODO screenshot: servers -->
-<!-- TODO screenshot: data sources -->
-<!-- TODO screenshot: logs -->
-<!-- TODO screenshot: JMS -->
+Taken against a WebLogic 12.2.1.4 domain running Oracle Service Bus.
+
+**Dashboard** — domain health, the issue queue and pressure per server.
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+**Servers** — state, health, heap and threads, with lifecycle actions per server or in bulk.
+
+![Servers](docs/screenshots/servers.png)
+
+**Deployments** — state per target, with start, stop and redeploy per instance.
+
+![Deployments](docs/screenshots/deployments.png)
+
+**Data sources** — pool state per server, with test and pool actions.
+
+![Data sources](docs/screenshots/data-sources.png)
+
+**Logs** — one tail across the server logs you select.
+
+![Logs](docs/screenshots/logs.png)
+
+**JMS** — JMS servers and their destinations, with messages, pending and consumers.
+
+![JMS](docs/screenshots/jms.png)
 
 ## Quick start
 
