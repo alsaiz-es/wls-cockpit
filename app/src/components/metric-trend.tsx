@@ -124,7 +124,12 @@ export function MetricTrend({
       title={trendTitle(series, title)}
     >
       <span className={cn('font-mono', alertTextClass(alertLevel))}>{value}</span>
-      {series.samples.length >= 2 ? <MetricSparkline samples={series.samples} /> : null}
+      {series.samples.length >= 2 ? (
+        <MetricSparkline samples={series.samples} />
+      ) : (
+        // Keeps the slot while a row has no history yet, so values line up down the column.
+        <span className="h-[18px] w-16 shrink-0" aria-hidden />
+      )}
       <span className={cn('inline-flex w-3 justify-center', tone)}>
         <TrendIcon direction={direction} />
       </span>
