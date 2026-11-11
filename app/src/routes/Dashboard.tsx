@@ -167,7 +167,7 @@ export function Dashboard() {
             metricScopeKey={history.scopeKey}
           />
 
-          <div className="grid gap-4 xl:grid-cols-2">
+          <div className="grid gap-4">
             {!visual.emphasize.issueQueue ? (
               <Section title="Issue Queue" detail="Read-only diagnostic targets for the next operator action.">
                 <IssueQueue issues={snapshot.issues} compact={visual.compact.issues} onSnapshotIssue={openIssueSnapshot} />
@@ -178,7 +178,7 @@ export function Dashboard() {
             <ApplicationsPanel snapshot={snapshot} isFetching={isFetching} />
           </div>
 
-          <div className="grid gap-4 xl:grid-cols-2">
+          <div className="grid gap-4">
             <JdbcPoolsPanel
               snapshot={snapshot}
               isFetching={isFetching}

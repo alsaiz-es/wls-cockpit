@@ -331,7 +331,9 @@ Visual rules:
 - Sticky header when the table is taller than the viewport.
 - Trend cells in dashboard cards use `<MetricTrend compact>` (40 px sparkline,
   no minimum width) so the full-width Server Pressure table fits its card at
-  1440 px. Page tables keep the 64 px sparkline and may scroll horizontally.
+  1440 px. Dashboard cards that hold a table stack at full width: half a
+  row is narrower than the tables. Page tables keep the 64 px sparkline and
+  may scroll horizontally.
 - Multi-select: 32 px first column with checkbox. Selected rows have a 2 px
   left border in accent color and a faint accent-tinted background
   (`accent / 10%`). A floating action bar appears at the bottom-right of
