@@ -53,7 +53,7 @@ test('CLI parses safe startup options and rejects credentials', () => {
   if (!targetless.ok) throw new Error(targetless.error)
   assert.equal(targetless.value.targetUrl, undefined)
   assert.equal(targetless.value.host, '127.0.0.1')
-  assert.equal(targetless.value.port, 8080)
+  assert.equal(targetless.value.port, 8888)
 
   const parsed = parseCliArgs(
     ['--target=http://wls-admin.example.com:7001/', '--host=127.0.0.1', '--port=0', '--version=12.2.1.4.0'],

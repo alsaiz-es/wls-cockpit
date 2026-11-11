@@ -23,7 +23,7 @@ export type CliParseResult =
   | { ok: false; error: string; help?: boolean }
 
 const DEFAULT_HOST = '127.0.0.1'
-const DEFAULT_PORT = 8080
+const DEFAULT_PORT = 8888
 
 function readOption(args: string[], index: number) {
   const arg = args[index]
@@ -145,12 +145,12 @@ export function parseCliArgs(args: string[], env: Record<string, string | undefi
 
 export function helpText() {
   return [
-    'Usage: wls-cockpit [--target=http://wls-admin.example.com:7001] [--host=127.0.0.1] [--port=8080]',
+    'Usage: wls-cockpit [--target=http://wls-admin.example.com:7001] [--host=127.0.0.1] [--port=8888]',
     '',
     'Options:',
     '  --target   Optional WebLogic AdminServer origin for first-run defaults. Credentials, paths, queries, and fragments are rejected.',
     '  --host     Local bind host. Defaults to 127.0.0.1.',
-    '  --port     Local bind port. Defaults to 8080. Use 0 for an ephemeral port.',
+    '  --port     Local bind port. Defaults to 8888. Use 0 for an ephemeral port.',
     '  --version  Default WLS REST version for initial profile seeding.',
     '  --read-only-demo  Hide mutation affordances and mask sensitive display values.',
     '  --open / --no-open  Open Cockpit in the default browser once it is listening. Defaults to',

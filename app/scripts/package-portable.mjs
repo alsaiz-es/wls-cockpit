@@ -195,7 +195,7 @@ function portableReadme(platform, version, { windowsLauncher = false } = {}) {
   const optionalExample =
     platform === 'windows'
       ? `  ${start} --target=http://wls-admin.example.com:7001`
-      : `  ${start} --host=127.0.0.1 --port=8080 --target=http://wls-admin.example.com:7001`
+      : `  ${start} --host=127.0.0.1 --port=8888 --target=http://wls-admin.example.com:7001`
   return [
     'WLS Cockpit Portable Runtime',
     '============================',

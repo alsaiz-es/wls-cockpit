@@ -16,7 +16,7 @@ Options:
 
 - `--target=<origin>`: optional WebLogic AdminServer origin used as a first-run default profile seed and proxy fallback.
 - `--host=<bind-host>`: local bind address. Defaults to `127.0.0.1`.
-- `--port=<port>`: local bind port. Defaults to `8080`; use `0` for an ephemeral port.
+- `--port=<port>`: local bind port. Defaults to `8888`; use `0` for an ephemeral port.
 - `--version=<wls-rest-version>`: default WLS REST version for initial profile seeding (`14.1.2.0.0` or `12.2.1.4.0`).
 - `--open` / `--no-open`: open the default browser once Cockpit is listening, or never. Without either flag the browser opens only when stdout is an interactive terminal. `WLS_COCKPIT_OPEN=1` or `0` does the same.
 - `--exit-with-last-tab`: stop when the last browser tab with Cockpit closes, 10 seconds after it closes so a reload keeps it running. Each tab keeps a WebSocket open to the local server while it lives, which the browser drops when the tab closes. `WLS Cockpit.app` and `WLS Cockpit.exe` start Cockpit this way; `WLS_COCKPIT_EXIT_WITH_LAST_TAB=1` does the same.

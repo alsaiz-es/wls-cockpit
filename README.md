@@ -70,7 +70,7 @@ Requires Node.js 20.11 or later on the workstation that runs Cockpit.
 npx wls-cockpit
 ```
 
-Cockpit opens in your default browser (`http://127.0.0.1:8080` by default; the URL is also
+Cockpit opens in your default browser (`http://127.0.0.1:8888` by default; the URL is also
 printed). Create a connection profile for your AdminServer and sign in with a WebLogic user.
 Running the command again while Cockpit is up just opens the browser on the running instance.
 Stop it with Ctrl+C or with **Quit** in the app header.
@@ -102,7 +102,7 @@ changes, such as a `Monitor`-only user.
 |---|---|---|---|
 | `--target=<origin>` | `WLS_COCKPIT_TARGET` | none | AdminServer origin (for example `http://wls-admin.example.com:7001`) used to seed the first profile and as proxy fallback. Credentials, paths, queries and fragments are rejected. |
 | `--host=<host>` | `WLS_COCKPIT_HOST` | `127.0.0.1` | Local bind address. |
-| `--port=<port>` | `WLS_COCKPIT_PORT` | `8080` | Local bind port. `0` picks an ephemeral port. |
+| `--port=<port>` | `WLS_COCKPIT_PORT` | `8888` | Local bind port. `0` picks an ephemeral port. |
 | `--version=<version>` | `WLS_COCKPIT_VERSION` | `14.1.2.0.0` | Default REST version for the seeded profile: `14.1.2.0.0` or `12.2.1.4.0`. |
 | `--read-only-demo` | `WLS_COCKPIT_READ_ONLY` | off | Read-only demo mode (see above). |
 | `--exit-with-last-tab` | `WLS_COCKPIT_EXIT_WITH_LAST_TAB` | off | Stop when the last browser tab with Cockpit closes, after a 10 s grace period. The double-click launchers use it. |
