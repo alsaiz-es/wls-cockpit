@@ -1,6 +1,6 @@
 {
   "name": "wls-cockpit",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Local operations cockpit for Oracle WebLogic Server, built on the WebLogic REST Management API.",
   "keywords": [
     "weblogic",
