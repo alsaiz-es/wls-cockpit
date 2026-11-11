@@ -40,7 +40,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build && vite build --config vite.server.config.ts && node scripts/prepare-bin.mjs",
     "lint": "eslint .",
-    "test:unit": "node --experimental-strip-types --test tests/*.test.ts",
+    "test:unit": "node --experimental-strip-types --import ./tests/isolate-data-dir.ts --test tests/*.test.ts",
     "package:portable": "node scripts/package-portable.mjs",
     "package:portable:linux": "node scripts/package-portable.mjs --platform=linux",
     "package:portable:macos": "node scripts/package-portable.mjs --platform=macos",
