@@ -139,6 +139,7 @@ export function ServerPressurePanel({
         className: 'font-mono tabular-nums',
         cell: (row) => (
           <MetricTrend
+            compact
             series={getMetricHistorySeries(
               metricScopeKey,
               'servers',
@@ -157,6 +158,7 @@ export function ServerPressurePanel({
         className: 'font-mono tabular-nums',
         cell: (row) => (
           <MetricTrend
+            compact
             series={getMetricHistorySeries(
               metricScopeKey,
               'servers',
@@ -176,6 +178,7 @@ export function ServerPressurePanel({
         className: 'font-mono tabular-nums',
         cell: (row) => (
           <MetricTrend
+            compact
             series={getMetricHistorySeries(
               metricScopeKey,
               'servers',
@@ -195,6 +198,7 @@ export function ServerPressurePanel({
         className: 'font-mono tabular-nums',
         cell: (row) => (
           <MetricTrend
+            compact
             series={getMetricHistorySeries(
               metricScopeKey,
               'servers',
@@ -301,6 +305,7 @@ export function JmsPressurePanel({
         className: 'font-mono tabular-nums',
         cell: (row) => (
           <MetricTrend
+            compact
             series={getMetricHistorySeries(
               metricScopeKey,
               'jms',
@@ -320,6 +325,7 @@ export function JmsPressurePanel({
         className: 'font-mono tabular-nums',
         cell: (row) => (
           <MetricTrend
+            compact
             series={getMetricHistorySeries(
               metricScopeKey,
               'jms',
@@ -509,6 +515,7 @@ export function JdbcPoolsPanel({
         className: 'font-mono tabular-nums',
         cell: (row) => (
           <MetricTrend
+            compact
             series={getMetricHistorySeries(
               metricScopeKey,
               'jdbc',
@@ -535,6 +542,7 @@ export function JdbcPoolsPanel({
         className: 'font-mono tabular-nums',
         cell: (row) => (
           <MetricTrend
+            compact
             series={getMetricHistorySeries(
               metricScopeKey,
               'jdbc',

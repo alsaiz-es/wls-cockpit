@@ -12,10 +12,13 @@ export interface MetricTrendProps {
   higherIsWorse?: boolean
   // Colours the value when this figure makes its resource warning or critical (§9.5).
   alertLevel?: AlertLevel | null
+  // Narrower sparkline and no minimum width, for tables with several trend columns (§7.1).
+  compact?: boolean
   className?: string
 }
 
 const SPARKLINE_WIDTH = 64
+const SPARKLINE_COMPACT_WIDTH = 40
 const SPARKLINE_HEIGHT = 18
 const SPARKLINE_PADDING = 2
 
@@ -31,8 +34,8 @@ function TrendIcon({ direction }: { direction: MetricTrendDirection }) {
   return <Minus className="size-3" strokeWidth={1.5} aria-hidden />
 }
 
-function pointFor(sample: MetricHistorySample, index: number, samples: MetricHistorySample[], min: number, range: number) {
-  const availableWidth = SPARKLINE_WIDTH - SPARKLINE_PADDING * 2
+function pointFor(sample: MetricHistorySample, index: number, samples: MetricHistorySample[], min: number, range: number, width: number) {
+  const availableWidth = width - SPARKLINE_PADDING * 2
   const availableHeight = SPARKLINE_HEIGHT - SPARKLINE_PADDING * 2
   const x = samples.length <= 1
     ? SPARKLINE_PADDING
@@ -58,7 +61,15 @@ function sparklineSegments(samples: MetricHistorySample[]) {
   return segments
 }
 
-export function MetricSparkline({ samples, className }: { samples: MetricHistorySample[]; className?: string }) {
+export function MetricSparkline({
+  samples,
+  width = SPARKLINE_WIDTH,
+  className,
+}: {
+  samples: MetricHistorySample[]
+  width?: number
+  className?: string
+}) {
   if (samples.length < 2) return null
 
   const values = samples.map((sample) => sample.value)
@@ -69,17 +80,17 @@ export function MetricSparkline({ samples, className }: { samples: MetricHistory
 
   return (
     <svg
-      width={SPARKLINE_WIDTH}
+      width={width}
       height={SPARKLINE_HEIGHT}
-      viewBox={`0 0 ${SPARKLINE_WIDTH} ${SPARKLINE_HEIGHT}`}
-      className={cn('h-[18px] w-16 shrink-0 text-muted-foreground', className)}
+      viewBox={`0 0 ${width} ${SPARKLINE_HEIGHT}`}
+      className={cn('h-[18px] shrink-0 text-muted-foreground', className)}
       aria-hidden
     >
       {segments.map((segment, segmentIndex) => {
         if (segment.length < 2) return null
         const firstIndex = samples.indexOf(segment[0])
         const points = segment
-          .map((sample, index) => pointFor(sample, firstIndex + index, samples, min, range))
+          .map((sample, index) => pointFor(sample, firstIndex + index, samples, min, range, width))
           .join(' ')
         return (
           <polyline
@@ -113,22 +124,24 @@ export function MetricTrend({
   title,
   higherIsWorse = true,
   alertLevel,
+  compact = false,
   className,
 }: MetricTrendProps) {
   const direction = series.samples.length < 2 ? 'unknown' : series.direction
   const tone = trendClass(direction, higherIsWorse)
+  const sparklineWidth = compact ? SPARKLINE_COMPACT_WIDTH : SPARKLINE_WIDTH
 
   return (
     <span
-      className={cn('inline-flex min-w-[112px] items-center justify-end gap-1.5 tabular-nums', className)}
+      className={cn('inline-flex items-center justify-end gap-1.5 tabular-nums', !compact && 'min-w-[112px]', className)}
       title={trendTitle(series, title)}
     >
       <span className={cn('font-mono', alertTextClass(alertLevel))}>{value}</span>
       {series.samples.length >= 2 ? (
-        <MetricSparkline samples={series.samples} />
+        <MetricSparkline samples={series.samples} width={sparklineWidth} />
       ) : (
         // Keeps the slot while a row has no history yet, so values line up down the column.
-        <span className="h-[18px] w-16 shrink-0" aria-hidden />
+        <span className="h-[18px] shrink-0" style={{ width: sparklineWidth }} aria-hidden />
       )}
       <span className={cn('inline-flex w-3 justify-center', tone)}>
         <TrendIcon direction={direction} />
