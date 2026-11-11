@@ -8,8 +8,8 @@
 #     npm sets this up from the package settings page, so the very first version has
 #     to be published with a token (next option) or by hand.
 #   - Token: create a granular npm access token with publish rights, store it as the
-#     repository secret NPM_TOKEN, and uncomment the NODE_AUTH_TOKEN line in the publish
-#     step. Remove the secret once trusted publishing is configured.
+#     repository secret NPM_TOKEN; the publish step passes it as NODE_AUTH_TOKEN. Remove the
+#     secret and that env block once trusted publishing is configured.
 #
 # Provenance requires a public repository, and package.json `repository.url` must match
 # this GitHub repository exactly (git+https://github.com/alsaiz-es/wls-cockpit.git).
@@ -64,9 +64,11 @@ jobs:
       - run: npx tsc -b --force
       - run: npm run build
 
+      # First publish: authenticates with the NPM_TOKEN secret. Comment the env block out again
+      # once trusted publishing is configured for the package, and delete the secret.
       - run: npm publish --provenance --access public
-        # env:
-        #   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   github-release:
     name: GitHub Release with portable archives
