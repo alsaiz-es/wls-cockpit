@@ -1,15 +1,10 @@
 # Release: runs on tags v*. Publishes app/ to npm as `wls-cockpit` and attaches portable
 # archives to a GitHub Release.
 #
-# npm configuration (choose one):
-#   - Trusted publishing (preferred, no secret): on npmjs.com, package settings ->
-#     Trusted publisher -> GitHub Actions, organization `alsaiz-es`, repository
-#     `wls-cockpit`, workflow `release.yml`. Needs npm >= 11.5.1 (Node 24 below).
-#     npm sets this up from the package settings page, so the very first version has
-#     to be published with a token (next option) or by hand.
-#   - Token: create a granular npm access token with publish rights, store it as the
-#     repository secret NPM_TOKEN; the publish step passes it as NODE_AUTH_TOKEN. Remove the
-#     secret and that env block once trusted publishing is configured.
+# npm publishes through trusted publishing (OIDC), with no token or secret: on npmjs.com,
+# package settings -> Trusted Publisher -> GitHub Actions, organization `alsaiz-es`,
+# repository `wls-cockpit`, workflow filename `release.yml` (exact spelling), no environment,
+# "Allow npm publish" checked. Needs npm >= 11.5.1 (Node 24 below) and `id-token: write`.
 #
 # Provenance requires a public repository, and package.json `repository.url` must match
 # this GitHub repository exactly (git+https://github.com/alsaiz-es/wls-cockpit.git).
@@ -64,11 +59,8 @@ jobs:
       - run: npx tsc -b --force
       - run: npm run build
 
-      # First publish: authenticates with the NPM_TOKEN secret. Comment the env block out again
-      # once trusted publishing is configured for the package, and delete the secret.
+      # Authenticates with the OIDC token of this run (trusted publishing); no NODE_AUTH_TOKEN.
       - run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   github-release:
     name: GitHub Release with portable archives
